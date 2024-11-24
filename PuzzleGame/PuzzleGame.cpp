@@ -19,6 +19,8 @@ HBITMAP bmp_map;			//地图砖块图像
 HBITMAP bmp_dialog;			//对话框背景图像
 HBITMAP bmp_monster1;		//怪物1图像
 HBITMAP bmp_bloodbar;		//血条图像
+HBITMAP bmp_hp_mp_box;		//血条蓝条背景框
+HBITMAP bmp_mpbar;			//蓝条图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -36,6 +38,7 @@ bool keyRightDown = false;
 bool in_conversation = false;	//当前游戏处在对话状态
 const wchar_t* converstaion_content = nullptr;	//当前对话的内容
 int currentBloodBlocks = BLOOD_BLOCK_COUNT;
+int currentmpBlocks = MP_BLOCK_COUNT;
 
 //TODO 更多的全局变量
 
@@ -271,6 +274,8 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_dialog = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_DIALOG));
 	bmp_monster1 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MONSTER1));
 	bmp_bloodbar = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BLOODBAR));
+	bmp_hp_mp_box = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_HP_MP_BOX));
+	bmp_mpbar = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MPBAR));
 	
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
@@ -596,6 +601,14 @@ void TakeDamage(int damageBlocks) {
 	}
 }
 
+//用技能扣蓝函数
+void TakeMp(int damageBlocks) {
+	currentmpBlocks -= damageBlocks; // 扣血
+	if (currentmpBlocks < 0) {
+		currentmpBlocks = 0; // 防止血条块数为负
+	}
+}
+
 //TODO: 添加游戏需要的更多函数
 
 // 添加按钮函数
@@ -915,6 +928,33 @@ void Paint(HWND hWnd)
 			rect.right = WINDOW_WIDTH - 110;
 			rect.bottom = WINDOW_HEIGHT - 50;
 			DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
+		}
+
+		//绘制血条蓝条背景框
+		SelectObject(hdc_loadBmp, bmp_hp_mp_box);
+		TransparentBlt(
+			hdc_memBuffer,
+			HP_MP_BOX_START_X, HP_MP_BOX_START_Y,    // 背景框在界面上的起始位置
+			HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // 背景框宽高
+			hdc_loadBmp,
+			0, 0,                                   // 背景框在 BMP 图上的起始位置
+			HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // BMP 图中背景框的宽高
+			RGB(255, 255, 255)                      // 背景透明色
+		);
+
+		//绘制蓝条
+		for (int i = 0; i < currentmpBlocks; ++i) {
+			SelectObject(hdc_loadBmp, bmp_mpbar);
+			TransparentBlt(
+				hdc_memBuffer,
+				MP_START_X + i * MP_BLOCK_WIDTH, // 每块横向排列
+				MP_START_Y,                           // 固定纵坐标
+				MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT, // 每块血条的宽高
+				hdc_loadBmp,
+				0, 0,
+				MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT,
+				RGB(255, 255, 255) // 背景透明色
+			);
 		}
 
 		//绘制血条

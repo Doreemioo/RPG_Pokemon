@@ -66,5 +66,11 @@
     <Image Include="resources\bloodbar.bmp">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="resources\HP_MP_BOX.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="resources\mpbar.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

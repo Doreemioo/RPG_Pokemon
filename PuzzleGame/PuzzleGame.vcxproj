@@ -154,8 +154,10 @@
     <Image Include="resources\background.bmp" />
     <Image Include="resources\bloodbar.bmp" />
     <Image Include="resources\dialog.bmp" />
+    <Image Include="resources\HP_MP_BOX.bmp" />
     <Image Include="resources\map.bmp" />
     <Image Include="resources\monster1.bmp" />
+    <Image Include="resources\mpbar.bmp" />
     <Image Include="resources\npc_man1.bmp" />
     <Image Include="resources\player.bmp" />
     <Image Include="resources\startbutton.bmp" />

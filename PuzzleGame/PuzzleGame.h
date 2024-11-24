@@ -49,8 +49,17 @@ using namespace std;
 #define BLOOD_BLOCK_COUNT		3
 #define BLOOD_BLOCK_WIDTH		32
 #define BLOOD_BLOCK_HEIGHT		32
-#define BLOOD_START_X			80
-#define BLOOD_START_Y			80
+#define BLOOD_START_X			100
+#define BLOOD_START_Y			20
+#define MP_BLOCK_COUNT			3
+#define MP_BLOCK_WIDTH			32
+#define MP_BLOCK_HEIGHT			32
+#define MP_START_X				100
+#define MP_START_Y				100
+#define HP_MP_BOX_WIDTH			225
+#define HP_MP_BOX_HEIGHT		150
+#define HP_MP_BOX_START_X		0
+#define HP_MP_BOX_START_Y		0
 
 
 //单位状态定义
