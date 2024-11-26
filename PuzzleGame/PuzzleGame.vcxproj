@@ -152,6 +152,7 @@
   <ItemGroup>
     <Image Include="PuzzleGame.ico" />
     <Image Include="resources\background.bmp" />
+    <Image Include="resources\backpack.bmp" />
     <Image Include="resources\bloodbar.bmp" />
     <Image Include="resources\dialog.bmp" />
     <Image Include="resources\HP_MP_BOX.bmp" />

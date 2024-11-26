@@ -72,5 +72,8 @@
     <Image Include="resources\mpbar.bmp">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="resources\backpack.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

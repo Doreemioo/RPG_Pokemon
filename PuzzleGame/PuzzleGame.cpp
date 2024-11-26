@@ -21,6 +21,7 @@ HBITMAP bmp_monster1;		//怪物1图像
 HBITMAP bmp_bloodbar;		//血条图像
 HBITMAP bmp_hp_mp_box;		//血条蓝条背景框
 HBITMAP bmp_mpbar;			//蓝条图像
+HBITMAP bmp_backpack;		//背包图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -276,6 +277,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_bloodbar = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BLOODBAR));
 	bmp_hp_mp_box = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_HP_MP_BOX));
 	bmp_mpbar = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MPBAR));
+	bmp_backpack = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BACKPACK));
 	
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
@@ -684,6 +686,7 @@ NPC* CreateNPC(int x, int y, int npc_id)
 	return npc;
 }
 
+//添加怪物函数
 Monster* CreateMonster(int x, int y, int monster_id)
 {
 	Monster* monster = new Monster();
@@ -971,6 +974,18 @@ void Paint(HWND hWnd)
 				RGB(255, 255, 255) // 背景透明色
 			);
 		}
+
+		//绘制背景框
+		SelectObject(hdc_loadBmp, bmp_backpack);
+		TransparentBlt(
+			hdc_memBuffer,
+			BACKPACK_START_X, BACKPACK_START_Y,    // 背景框在界面上的起始位置
+			BACKPACK_WIDTH, BACKPACK_HEIGHT,      // 背景框宽高
+			hdc_loadBmp,
+			0, 0,                                   // 背景框在 BMP 图上的起始位置
+			BACKPACK_WIDTH, BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+			RGB(255, 255, 255)                      // 背景透明色
+		);
 	}
 
 	// 绘制按钮到缓存

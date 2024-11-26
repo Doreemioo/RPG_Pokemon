@@ -60,6 +60,12 @@ using namespace std;
 #define HP_MP_BOX_HEIGHT		150
 #define HP_MP_BOX_START_X		0
 #define HP_MP_BOX_START_Y		0
+#define BACKPACK_WIDTH			225
+#define BACKPACK_HEIGHT			225
+#define BACKPACK_START_X		0
+#define BACKPACK_START_Y		410
+#define BACKPACK_ROWS			4
+#define BACKPACK_COLS			4
 
 
 //单位状态定义
