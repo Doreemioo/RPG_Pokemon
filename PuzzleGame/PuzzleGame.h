@@ -70,6 +70,10 @@ using namespace std;
 #define BACKPACK_START_Y		410
 #define BACKPACK_ROWS			4
 #define BACKPACK_COLS			4
+#define BTN_BACKPACK_WIDTH		56
+#define BTN_BACKPACK_HEIGHT		58
+#define BTN_BACKPACK_START_X	50
+#define BTN_BACKPACK_START_Y	550
 
 
 //单位状态定义

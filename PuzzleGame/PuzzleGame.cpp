@@ -23,6 +23,7 @@ HBITMAP bmp_hp_mp_box;		//血条蓝条背景框
 HBITMAP bmp_mpbar;			//蓝条图像
 HBITMAP bmp_backpack;		//背包图像
 HBITMAP bmp_pokemon1;		//pokemon1图像
+HBITMAP bmp_btn_backpack;	//背包按钮图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -42,6 +43,9 @@ bool in_conversation = false;	//当前游戏处在对话状态
 const wchar_t* converstaion_content = nullptr;	//当前对话的内容
 int currentBloodBlocks = BLOOD_BLOCK_COUNT;
 int currentmpBlocks = MP_BLOCK_COUNT;
+bool isBackpackOpen = false; // 用于记录背包是否打开
+RECT backpackButton = { BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y, BTN_BACKPACK_START_X + BTN_BACKPACK_WIDTH, BTN_BACKPACK_START_Y + BTN_BACKPACK_HEIGHT };
+int x, y;
 
 //TODO 更多的全局变量
 
@@ -242,7 +246,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_LBUTTONDOWN:
         // 鼠标左键按下事件
         LButtonDown(hWnd, wParam, lParam);
+		x = LOWORD(lParam);
+		y = HIWORD(lParam);
+
+		// 检查点击位置是否在按钮内
+		if (x >= backpackButton.left && x <= backpackButton.right &&
+			y >= backpackButton.top && y <= backpackButton.bottom) {
+			isBackpackOpen = !isBackpackOpen; // 切换背包状态
+			InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+		}
         break;
+
+		if (!(x >= BACKPACK_START_X && x <= BACKPACK_START_X + BACKPACK_WIDTH &&
+			y >= BACKPACK_START_Y && y <= BACKPACK_START_Y + BACKPACK_HEIGHT)) {
+			isBackpackOpen = false; // 背包关闭
+			InvalidateRect(hWnd, NULL, FALSE);
+		}
     case WM_LBUTTONUP:
         // 鼠标左键松开事件
         LButtonUp(hWnd, wParam, lParam);
@@ -284,6 +303,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_mpbar = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MPBAR));
 	bmp_backpack = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BACKPACK));
 	bmp_pokemon1 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_POKEMON1));
+	bmp_btn_backpack = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BTN_BACKPACK));
 	
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
@@ -1053,17 +1073,35 @@ void Paint(HWND hWnd)
 			);
 		}
 
-		//绘制背景框
-		SelectObject(hdc_loadBmp, bmp_backpack);
-		TransparentBlt(
-			hdc_memBuffer,
-			BACKPACK_START_X, BACKPACK_START_Y,    // 背景框在界面上的起始位置
-			BACKPACK_WIDTH, BACKPACK_HEIGHT,      // 背景框宽高
-			hdc_loadBmp,
-			0, 0,                                   // 背景框在 BMP 图上的起始位置
-			BACKPACK_WIDTH, BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
-			RGB(255, 255, 255)                      // 背景透明色
-		);
+		if (isBackpackOpen)
+		{
+			//绘制背包背景
+			SelectObject(hdc_loadBmp, bmp_backpack);
+			TransparentBlt(
+				hdc_memBuffer,
+				BACKPACK_START_X, BACKPACK_START_Y,    // 背景框在界面上的起始位置
+				BACKPACK_WIDTH, BACKPACK_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				BACKPACK_WIDTH, BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+		}
+
+		if (!isBackpackOpen)
+		{
+			//绘制背包按钮
+			SelectObject(hdc_loadBmp, bmp_btn_backpack);
+			TransparentBlt(
+				hdc_memBuffer,
+				BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y,    // 背景框在界面上的起始位置
+				BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+		}
 	}
 
 	// 绘制按钮到缓存
