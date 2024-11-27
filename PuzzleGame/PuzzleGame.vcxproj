@@ -155,6 +155,7 @@
     <Image Include="resources\backpack.bmp" />
     <Image Include="resources\bloodbar.bmp" />
     <Image Include="resources\btn_backpack.bmp" />
+    <Image Include="resources\delete_box.bmp" />
     <Image Include="resources\dialog.bmp" />
     <Image Include="resources\HP_MP_BOX.bmp" />
     <Image Include="resources\map.bmp" />

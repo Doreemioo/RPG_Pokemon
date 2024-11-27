@@ -74,6 +74,10 @@ using namespace std;
 #define BTN_BACKPACK_HEIGHT		58
 #define BTN_BACKPACK_START_X	50
 #define BTN_BACKPACK_START_Y	550
+#define BTN_DELETE_BOX_WIDTH	25
+#define BTN_DELETE_BOX_HEIGHT	25
+#define BTN_DELETE_BOX_START_X	225
+#define BTN_DELETE_BOX_START_Y	410
 
 
 //单位状态定义
