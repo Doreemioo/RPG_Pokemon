@@ -46,6 +46,10 @@ using namespace std;
 #define MOSTER_SIZE_Y			30
 #define MOSTER_BITMAP_SIZE_X	14
 #define MOSTER_BITMAP_SIZE_Y	15
+#define POKEMON_SIZE_X			64		//宝可梦
+#define POKEMON_SIZE_Y			64
+#define POKEMON_BITMAP_SIZE_X	64
+#define POKEMON_BITMAP_SIZE_Y	64
 #define BLOOD_BLOCK_COUNT		3
 #define BLOOD_BLOCK_WIDTH		32
 #define BLOOD_BLOCK_HEIGHT		32
@@ -93,6 +97,7 @@ using namespace std;
 
 #define MONSTER_CAT_ID			3001
 
+#define POKEMON_FIRE_DRAGON_ID	4001
 ///
 
 #pragma endregion
@@ -173,6 +178,31 @@ struct Player
 	double vy;		//速度y
 	int health;		//生命值
 };
+
+// 宝可梦结构体
+struct Pokemon
+{
+	HBITMAP img;	//图片
+
+	int PokemonID;			//宝可梦ID
+	int frame_row;			//当前显示的是图像的第几行
+	int frame_column;		//当前显示的是图像的第几列
+	bool visible;			//是否可见
+
+	int* frame_sequence;	//当前的帧序列
+	int frame_count;		//帧序列的长度
+	int frame_id;			//当前显示的是帧序列的第几帧
+
+	int state;		//单位状态
+	int direction;	//单位方向
+
+	int x;			//坐标x
+	int y;			//坐标y
+	double vx;		//速度x
+	double vy;		//速度y
+	int health;		//生命值
+};
+
 // 怪物结构体
 struct Monster
 {
@@ -253,6 +283,7 @@ Button* CreateButton(int buttonID, HBITMAP img, int width, int height, int x, in
 Player* CreatePlayer(int x, int y);
 NPC* CreateNPC(int x, int y, int npc_id);
 Monster* CreateMonster(int x, int y, int monster_id);
+Pokemon* CreatePokemon(int x, int y, int pokemon_id);
 
 
 // 初始化场景函数
@@ -264,6 +295,7 @@ void UpdatePlayer(HWND hWnd);
 void UpdateNPCs(HWND hWnd);
 void UpdateMonsters(HWND hWnd);
 void UpdateMaps(HWND hWnd);
+void UpdatePokemons(HWND hWnd);
 
 void HandleConversationEvents(HWND hWnd);
 

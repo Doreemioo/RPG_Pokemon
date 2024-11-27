@@ -22,10 +22,12 @@ HBITMAP bmp_bloodbar;		//血条图像
 HBITMAP bmp_hp_mp_box;		//血条蓝条背景框
 HBITMAP bmp_mpbar;			//蓝条图像
 HBITMAP bmp_backpack;		//背包图像
+HBITMAP bmp_pokemon1;		//pokemon1图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
 vector<Monster*> monsters;	//怪物列表
+vector<Pokemon*> pokemons;	//宝可梦列表
 Player* player = NULL;		//玩家
 vector<Button*> buttons;	//按钮	
 
@@ -49,6 +51,8 @@ int PLAYER_FRAMES_HOLD[] = { 0 };
 int PLAYER_FRAMES_HOLD_COUNT = sizeof(PLAYER_FRAMES_HOLD) / sizeof(int);
 int NPC_FRAMES_HOLD[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3 };
 int NPC_FRAMES_HOLD_COUNT = sizeof(NPC_FRAMES_HOLD) / sizeof(int);
+int FIRE_DRAGON_FRAMES[] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3 };
+int FIRE_DRAGON_FRAME_COUNT(sizeof(FIRE_DRAGON_FRAMES) / sizeof(int));
 int FRAMES_WALK[] = {0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3,3,3,};
 int FRAMES_WALK_COUNT = sizeof(FRAMES_WALK) / sizeof(int);
 
@@ -248,6 +252,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (currentStage != NULL && currentStage->timerOn) {
 			TimerUpdate(hWnd, wParam, lParam);
 			CheckCollision();
+			UpdatePokemons(hWnd);
 		}
 		break;
     case WM_PAINT:
@@ -278,6 +283,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_hp_mp_box = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_HP_MP_BOX));
 	bmp_mpbar = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MPBAR));
 	bmp_backpack = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BACKPACK));
+	bmp_pokemon1 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_POKEMON1));
 	
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
@@ -469,6 +475,16 @@ void UpdateNPCs(HWND hWnd) {
 		npcs[i]->frame_id++;
 		npcs[i]->frame_id = npcs[i]->frame_id % npcs[i]->frame_count;
 		npcs[i]->frame_column = npcs[i]->frame_sequence[npcs[i]->frame_id];
+	}
+}
+
+//更新宝可梦状态
+void UpdatePokemons(HWND hWnd) {
+	for (int i = 0; i < pokemons.size(); i++) {
+		// 动画运行到下一帧
+		pokemons[i]->frame_id++;
+		pokemons[i]->frame_id = pokemons[i]->frame_id % pokemons[i]->frame_count; // 环绕回到0
+		pokemons[i]->frame_column = pokemons[i]->frame_sequence[pokemons[i]->frame_id];
 	}
 }
 
@@ -721,6 +737,41 @@ Monster* CreateMonster(int x, int y, int monster_id)
 	return monster;
 }
 
+//添加宝可梦函数
+Pokemon* CreatePokemon(int x, int y, int pokemon_id)
+{
+	Pokemon* pokemon = new Pokemon();
+	pokemon->PokemonID = pokemon_id;
+	pokemon->visible = true;
+	pokemon->x = x;
+	pokemon->y = y;
+	pokemon->direction = UNIT_DIRECT_DOWN;
+	pokemon->vx = 0;
+	pokemon->vy = 0;
+	pokemon->state = UNIT_STATE_HOLD;
+	pokemon->frame_row = pokemon->direction;
+	pokemon->frame_column = 0;
+	pokemon->frame_sequence = FIRE_DRAGON_FRAMES;
+	pokemon->frame_count = FIRE_DRAGON_FRAME_COUNT;
+	pokemon->frame_id = 0;
+
+	// 根据 PokemonID 设置帧序列
+	if (pokemon_id == POKEMON_FIRE_DRAGON_ID) {
+		pokemon->frame_sequence = FIRE_DRAGON_FRAMES;
+		pokemon->frame_count = FIRE_DRAGON_FRAME_COUNT;
+	}
+	else {
+		pokemon->frame_sequence = FIRE_DRAGON_FRAMES;
+		pokemon->frame_count = FIRE_DRAGON_FRAME_COUNT;
+	}
+	// 加载对应的宝可梦图像资源
+	if (pokemon_id == POKEMON_FIRE_DRAGON_ID) {
+		pokemon->img = bmp_pokemon1;  // 假设 Fire Dragon 对应 bmp_pokemon1
+	}
+
+	return pokemon;
+}
+
 // 初始化游戏场景函数
 void InitStage(HWND hWnd, int stageID)
 {
@@ -762,6 +813,9 @@ void InitStage(HWND hWnd, int stageID)
 		if (npcs.size() == 0) {
 			npcs.push_back(CreateNPC(625, 200, NPC_MAN1_ID));	//第一次调用：初始化NPC
 		}
+		if (pokemons.size() == 0) {
+			pokemons.push_back(CreatePokemon(800, 200, POKEMON_FIRE_DRAGON_ID));	//第一次调用：初始化NPC
+		}
 		//NPC的可见性
 		for (int i = 0; i < npcs.size(); i++)
 		{
@@ -779,6 +833,15 @@ void InitStage(HWND hWnd, int stageID)
 				monster->visible = true;
 			else
 				monster->visible = false;
+		}
+		//宝可梦的可见性
+		for (int i = 0; i < pokemons.size(); i++)
+		{
+			Pokemon* pokemon = pokemons[i];
+			if (true) //TODO：加载游戏界面需要的按钮
+				pokemon->visible = true;
+			else
+				pokemon->visible = false;
 		}
 	}
 	else if (stageID == STAGE_2)
@@ -903,6 +966,21 @@ void Paint(HWND hWnd)
 					hdc_loadBmp,
 					MOSTER_BITMAP_SIZE_X * monsters[i]->frame_column, MOSTER_BITMAP_SIZE_Y * monsters[i]->frame_row,	// 位图上起始绘制点
 					MOSTER_BITMAP_SIZE_X, MOSTER_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+					RGB(255, 255, 255)
+				);
+			}
+		}
+		//绘制宝可梦
+		for (int i = 0; i < pokemons.size(); i++) {
+			if (pokemons[i]->visible) {
+				SelectObject(hdc_loadBmp, pokemons[i]->img);
+				TransparentBlt(
+					hdc_memBuffer,
+					pokemons[i]->x - 0.5 * POKEMON_SIZE_X, pokemons[i]->y - 0.5 * POKEMON_SIZE_Y,		// 界面上起始绘制点
+					POKEMON_SIZE_X, POKEMON_SIZE_Y,											// 界面上绘制宽度高度
+					hdc_loadBmp,
+					POKEMON_BITMAP_SIZE_X * pokemons[i]->frame_column, POKEMON_BITMAP_SIZE_Y * pokemons[i]->frame_row,	// 位图上起始绘制点
+					POKEMON_BITMAP_SIZE_X, POKEMON_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
 					RGB(255, 255, 255)
 				);
 			}
