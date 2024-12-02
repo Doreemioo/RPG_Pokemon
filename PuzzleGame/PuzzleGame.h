@@ -197,6 +197,9 @@ struct Pokemon
 	int frame_column;		//当前显示的是图像的第几列
 	bool visible;			//是否可见
 
+	int waitTime; // 停顿时间
+	bool moving; // 是否正在移动
+
 	int* frame_sequence;	//当前的帧序列
 	int frame_count;		//帧序列的长度
 	int frame_id;			//当前显示的是帧序列的第几帧
@@ -281,6 +284,8 @@ void CheckCollision();
 bool CheckCollision1(int x, int y, int direction, int map[20][28]);
 #pragma endregion
 
+//宝可梦随机运动函数
+void RandomizePokemonMovement(Pokemon* pokemon);
 
 #pragma region 其它游戏状态处理函数声明
 

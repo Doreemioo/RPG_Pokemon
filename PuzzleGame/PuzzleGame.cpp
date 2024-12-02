@@ -24,7 +24,8 @@ HBITMAP bmp_mpbar;			//蓝条图像
 HBITMAP bmp_backpack;		//背包图像
 HBITMAP bmp_pokemon1;		//pokemon1图像
 HBITMAP bmp_btn_backpack;	//背包按钮图像
-HBITMAP bmp_delete_box;			//背包关闭键图像
+HBITMAP bmp_delete_box;		//背包关闭键图像
+HBITMAP bmp_start_bg;		//背包关闭键图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -309,6 +310,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_pokemon1 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_POKEMON1));
 	bmp_btn_backpack = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BTN_BACKPACK));
 	bmp_delete_box = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_DELETE_BOX));
+	bmp_start_bg = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_START_BG));
 	
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
@@ -510,6 +512,39 @@ void UpdatePokemons(HWND hWnd) {
 		pokemons[i]->frame_id++;
 		pokemons[i]->frame_id = pokemons[i]->frame_id % pokemons[i]->frame_count; // 环绕回到0
 		pokemons[i]->frame_column = pokemons[i]->frame_sequence[pokemons[i]->frame_id];
+		if (pokemons[i]->moving) {
+			// 更新位置
+			pokemons[i]->x += pokemons[i]->vx;
+			pokemons[i]->y += pokemons[i]->vy;
+
+			// 检查边界，防止超出范围
+			if (pokemons[i]->x < 672) {
+				pokemons[i]->x = 672; // 调整位置到边界内
+				pokemons[i]->vx = -pokemons[i]->vx; // 反转水平速度
+			}
+			if (pokemons[i]->x > 832) {
+				pokemons[i]->x = 832;
+				pokemons[i]->vx = -pokemons[i]->vx;
+			}
+			if (pokemons[i]->y < 416) {
+				pokemons[i]->y = 416;
+				pokemons[i]->vy = -pokemons[i]->vy; // 反转垂直速度
+			}
+			if (pokemons[i]->y > 576) {
+				pokemons[i]->y = 576;
+				pokemons[i]->vy = -pokemons[i]->vy;
+			}
+
+			// 减少停顿时间，直到停止运动
+			pokemons[i]->waitTime--;
+			if (pokemons[i]->waitTime <= 0) {
+				pokemons[i]->moving = false;
+			}
+		}
+		else {
+			// 随机化运动参数，准备下一次运动
+			RandomizePokemonMovement(pokemons[i]);
+		}
 	}
 }
 
@@ -599,6 +634,33 @@ void CheckCollision() {
 			}
 		}
 	}
+	for (int i = 0; i < pokemons.size(); i++) {
+		Pokemon* pokemon = pokemons[i];
+
+		// 判断玩家和 NPC 是否重叠
+		bool poke_horizontalOverlap = (player->x < pokemon->x + HUMAN_SIZE_X) && (player->x + HUMAN_SIZE_X > pokemon->x);
+		bool poke_verticalOverlap = (player->y < pokemon->y + HUMAN_SIZE_Y - 10) && (player->y + HUMAN_SIZE_Y > pokemon->y);
+
+		// 如果发生重叠，根据玩家的移动方向修正位置
+		if (poke_horizontalOverlap && poke_verticalOverlap) {
+			switch (player->direction) {
+			case UNIT_DIRECT_LEFT:
+				player->x = pokemon->x + HUMAN_SIZE_X + 1; // 偏移 1 像素，避免再次触发碰撞
+				break;
+			case UNIT_DIRECT_UP:
+				player->y = pokemon->y + HUMAN_SIZE_Y - 7; // 偏移 1 像素
+				break;
+			case UNIT_DIRECT_RIGHT:
+				player->x = pokemon->x - HUMAN_SIZE_X - 1; // 偏移 1 像素
+				break;
+			case UNIT_DIRECT_DOWN:
+				player->y = pokemon->y - HUMAN_SIZE_Y - 1; // 偏移 1 像素
+				break;
+			default:
+				break;
+			}
+		}
+	}
 }
 
 // 碰撞检测函数
@@ -650,6 +712,32 @@ void TakeMp(int damageBlocks) {
 	if (currentmpBlocks < 0) {
 		currentmpBlocks = 0; // 防止血条块数为负
 	}
+}
+
+//宝可梦随机运动函数
+void RandomizePokemonMovement(Pokemon* pokemon) {
+	pokemon->direction = rand() % 4; // 随机生成方向
+	int speed = rand() % 2 + 1; // 随机生成速度 (1到5)
+	switch (pokemon->direction) {
+	case 0: // 向上
+		pokemon->vx = 0;
+		pokemon->vy = -speed;
+		break;
+	case 1: // 向右
+		pokemon->vx = speed;
+		pokemon->vy = 0;
+		break;
+	case 2: // 向下
+		pokemon->vx = 0;
+		pokemon->vy = speed;
+		break;
+	case 3: // 向左
+		pokemon->vx = -speed;
+		pokemon->vy = 0;
+		break;
+	}
+	pokemon->waitTime = rand() % 100 + 50; // 将停留时间范围设为 50-150
+	pokemon->moving = true;
 }
 
 //TODO: 添加游戏需要的更多函数
@@ -807,7 +895,7 @@ void InitStage(HWND hWnd, int stageID)
 	currentStage->stageID = stageID;
 
 	if (stageID == STAGE_STARTMENU) {
-		currentStage->bg = bmp_Background;
+		currentStage->bg = bmp_start_bg;
 		currentStage->timerOn = false;
 		//显示开始界面的按钮
 		for (int i = 0; i < buttons.size(); i++)
@@ -1010,32 +1098,7 @@ void Paint(HWND hWnd)
 				);
 			}
 		}
-		//如果正处在对话状态：绘制对话框
-		if (in_conversation) {
-			SelectObject(hdc_loadBmp, bmp_dialog);
-			TransparentBlt(
-				hdc_memBuffer,
-				0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
-				hdc_loadBmp,
-				0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
-				RGB(255, 255, 255)
-			);
-			//绘制文字
-			HFONT hFont = CreateFontW(
-				20, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-				OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
-				L"SimSun");		//创建字体
-			SelectObject(hdc_memBuffer, hFont);
-			SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
-			SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
-			RECT rect;
-			rect.left = 50;
-			rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
-			rect.right = WINDOW_WIDTH - 110;
-			rect.bottom = WINDOW_HEIGHT - 50;
-			DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
-		}
-
+		
 		//绘制血条蓝条背景框
 		SelectObject(hdc_loadBmp, bmp_hp_mp_box);
 		TransparentBlt(
@@ -1117,6 +1180,32 @@ void Paint(HWND hWnd)
 				RGB(255, 255, 255)                      // 背景透明色
 			);
 		}
+		//如果正处在对话状态：绘制对话框
+		if (in_conversation) {
+			SelectObject(hdc_loadBmp, bmp_dialog);
+			TransparentBlt(
+				hdc_memBuffer,
+				0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
+				hdc_loadBmp,
+				0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+				RGB(255, 255, 255)
+			);
+			//绘制文字
+			HFONT hFont = CreateFontW(
+				20, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+				OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+				L"SimSun");		//创建字体
+			SelectObject(hdc_memBuffer, hFont);
+			SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
+			SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
+			RECT rect;
+			rect.left = 50;
+			rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
+			rect.right = WINDOW_WIDTH - 110;
+			rect.bottom = WINDOW_HEIGHT - 50;
+			DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
+		}
+
 	}
 
 	// 绘制按钮到缓存
