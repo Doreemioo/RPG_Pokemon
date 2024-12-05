@@ -87,5 +87,8 @@
     <Image Include="resources\start_background.bmp">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="resources\pause.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

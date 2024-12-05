@@ -162,6 +162,7 @@
     <Image Include="resources\monster1.bmp" />
     <Image Include="resources\mpbar.bmp" />
     <Image Include="resources\npc_man1.bmp" />
+    <Image Include="resources\pause.bmp" />
     <Image Include="resources\player.bmp" />
     <Image Include="resources\pokemon1.bmp" />
     <Image Include="resources\startbutton.bmp" />

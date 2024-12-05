@@ -26,6 +26,7 @@ HBITMAP bmp_pokemon1;		//pokemon1图像
 HBITMAP bmp_btn_backpack;	//背包按钮图像
 HBITMAP bmp_delete_box;		//背包关闭键图像
 HBITMAP bmp_start_bg;		//背包关闭键图像
+HBITMAP bmp_pause_bg;		//暂停界面图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -50,6 +51,8 @@ RECT backpack = { BACKPACK_START_X, BACKPACK_START_Y, BACKPACK_START_X + BACKPAC
 RECT backpackButton = { BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y, BTN_BACKPACK_START_X + BTN_BACKPACK_WIDTH, BTN_BACKPACK_START_Y + BTN_BACKPACK_HEIGHT };//定义背包按钮的尺寸
 RECT backpackDelete = { BTN_DELETE_BOX_START_X, BTN_DELETE_BOX_START_Y, BTN_DELETE_BOX_START_X + BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_START_Y + BTN_DELETE_BOX_HEIGHT };//定义背包关闭按钮的尺寸
 int x, y;//记录鼠标点击位置的坐标
+bool isPaused = false; // 游戏是否处于暂停状态
+
 
 //TODO 更多的全局变量
 
@@ -71,13 +74,13 @@ int map_stage1[20][28] = {
 	{ 7, 7, 7, 7, 7, 7, 7, 7, 7, 0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,},
 	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
 	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
-	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 5, 5, 6, 0, 0, 0, 0, 0, 3,},
-	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 9, 9, 9,10, 0, 0, 0, 0, 0, 7,},
-	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 9, 9, 9,10, 0, 0, 0, 0, 0, 3,},
-	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 9, 9, 9,10, 0, 0, 0, 0, 0, 7,},
-	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,12,13,13,13,14, 0, 0, 0, 0, 0, 3,},
-	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
-	{ 3, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
+	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 17, 18, 19, 20, 0, 0, 0, 0, 0, 3,},
+	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 22, 23, 24, 25, 0, 0, 0, 0, 0, 7,},
+	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 27, 28, 29, 30, 0, 0, 0, 0, 0, 3,},
+	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 32, 33, 34, 35, 0, 0, 0, 0, 0, 7,},
+	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 37, 38, 39, 40, 0, 0, 0, 0, 0, 3,},
+	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 13, 13, 13, 14, 0, 0, 0, 0, 0, 7,},
+	{ 3, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
 	{ 7, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
 	{ 3, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
 	{ 7, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
@@ -238,6 +241,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
         // 键盘按下事件
         KeyDown(hWnd, wParam, lParam);
+		if (wParam == VK_ESCAPE) { // 判断是否按下 ESC 键
+			isPaused = !isPaused; // 切换暂停状态
+			InvalidateRect(hWnd, NULL, TRUE); // 触发重绘
+		}
         break;
     case WM_KEYUP:
         // 键盘松开事件
@@ -266,6 +273,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			isBackpackOpen = !isBackpackOpen;
 			InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
 		}
+		else if (isPaused && x >= 390 && x <= 570 && y >= 280 && y <= 365)
+		{
+			isPaused = !isPaused;
+			InvalidateRect(hWnd, NULL, FALSE);
+		}
+		else if (isPaused && x >= 390 && x <= 570 && y >= 385 && y <= 460)
+		{
+			PostQuitMessage(0);
+		}
+
 		break;
     case WM_LBUTTONUP:
         // 鼠标左键松开事件
@@ -311,7 +328,9 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_btn_backpack = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BTN_BACKPACK));
 	bmp_delete_box = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_DELETE_BOX));
 	bmp_start_bg = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_START_BG));
-	
+	bmp_pause_bg = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_PAUSE));
+
+
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
 		(WINDOW_WIDTH - BUTTON_STARTGAME_WIDTH) / 2, (WINDOW_WIDTH - BUTTON_STARTGAME_HEIGHT) / 2);
@@ -691,7 +710,7 @@ bool CheckCollision1(int x, int y, int direction, int map[20][28]) {
 	}
 
 	// 检查是否碰到不可通过的障碍物（3, 7, 15）
-	if (map[targetY][targetX] == 3 || map[targetY][targetX] == 7 || map[targetY][targetX] == 15 || map[targetY][targetX] == 12) {
+	if (map[targetY][targetX] == 3 || map[targetY][targetX] == 7 || map[targetY][targetX] == 15 || map[targetY][targetX] == 12 || map[targetY][targetX] == 16 || map[targetY][targetX] == 17 || map[targetY][targetX] == 18 || map[targetY][targetX] == 19 || map[targetY][targetX] == 20 || map[targetY][targetX] == 21 || map[targetY][targetX] == 25 || map[targetY][targetX] == 26 || map[targetY][targetX] == 30 || map[targetY][targetX] == 31 || map[targetY][targetX] == 35 || map[targetY][targetX] == 36 || map[targetY][targetX] == 33 || map[targetY][targetX] == 39 || map[targetY][targetX] == 40) {
 		return true; // 碰撞，无法移动
 	}
 
@@ -924,7 +943,7 @@ void InitStage(HWND hWnd, int stageID)
 		if (player == NULL)
 			player = CreatePlayer(200, 200);					//第一次调用：初始化player
 		if (npcs.size() == 0) {
-			npcs.push_back(CreateNPC(625, 200, NPC_MAN1_ID));	//第一次调用：初始化NPC
+			npcs.push_back(CreateNPC(625, 300, NPC_MAN1_ID));	//第一次调用：初始化NPC
 		}
 		if (pokemons.size() == 0) {
 			pokemons.push_back(CreatePokemon(800, 200, POKEMON_FIRE_DRAGON_ID));	//第一次调用：初始化NPC
@@ -1026,6 +1045,22 @@ void Paint(HWND hWnd)
 	}
 	else if (currentStage->stageID >= STAGE_1 && currentStage->stageID <= STAGE_2) //TODO：添加多个游戏场景
 	{
+
+		if (isPaused)
+		{
+			SelectObject(hdc_loadBmp, bmp_pause_bg);
+			TransparentBlt(
+				hdc_memBuffer,
+				PAUSE_BG_START_X, PAUSE_BG_START_Y,    // 背景框在界面上的起始位置
+				PAUSE_BG_WIDTH, PAUSE_BG_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				PAUSE_BG_WIDTH, PAUSE_BG_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+		}
+		else
+		{
 		//绘制地图
 		SelectObject(hdc_loadBmp, bmp_map);
 		for (int i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
@@ -1035,8 +1070,8 @@ void Paint(HWND hWnd)
 					j * BLOCK_SIZE_X, i * BLOCK_SIZE_Y,							// 界面上起始绘制点
 					BLOCK_SIZE_X, BLOCK_SIZE_Y,									// 界面上绘制宽度高度
 					hdc_loadBmp,
-					(map[i][j] % 4) * BLOCK_BITMAP_SIZE_X,						// 位图上起始绘制点
-					(map[i][j] / 4) * BLOCK_BITMAP_SIZE_Y,
+					(map[i][j] % 8) * BLOCK_BITMAP_SIZE_X,						// 位图上起始绘制点
+					(map[i][j] / 8) * BLOCK_BITMAP_SIZE_Y,
 					BLOCK_BITMAP_SIZE_X, BLOCK_BITMAP_SIZE_Y,					// 位图上绘制宽度高度
 					RGB(255, 255, 255));										// 位图上的哪个颜色会被视为背景
 			}
@@ -1204,6 +1239,7 @@ void Paint(HWND hWnd)
 			rect.right = WINDOW_WIDTH - 110;
 			rect.bottom = WINDOW_HEIGHT - 50;
 			DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
+		}
 		}
 
 	}

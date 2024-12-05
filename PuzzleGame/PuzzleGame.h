@@ -26,8 +26,8 @@ using namespace std;
 #define STAGE_2					2
 
 //尺寸
-#define BG_BITMAP_WIDTH			240		//背景图片的位图宽度
-#define BG_BITMAP_HEIGHT		160		//背景图片的位图高度
+#define BG_BITMAP_WIDTH			960		//背景图片的位图宽度
+#define BG_BITMAP_HEIGHT		640		//背景图片的位图高度
 #define BG_COLUMNS				28		//背景列数
 #define BG_ROWS					20		//背景行数
 #define HUMAN_SIZE_X			38		//人物在屏幕上的宽度
@@ -78,6 +78,10 @@ using namespace std;
 #define BTN_DELETE_BOX_HEIGHT	25
 #define BTN_DELETE_BOX_START_X	225
 #define BTN_DELETE_BOX_START_Y	410
+#define PAUSE_BG_WIDTH			480
+#define PAUSE_BG_HEIGHT			320
+#define PAUSE_BG_START_X		240
+#define PAUSE_BG_START_Y		160
 
 
 //单位状态定义
