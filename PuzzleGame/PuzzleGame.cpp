@@ -27,6 +27,8 @@ HBITMAP bmp_btn_backpack;	//背包按钮图像
 HBITMAP bmp_delete_box;		//背包关闭键图像
 HBITMAP bmp_start_bg;		//背包关闭键图像
 HBITMAP bmp_pause_bg;		//暂停界面图像
+HBITMAP bmp_sword;			//道具剑图标
+HBITMAP bmp_shield;			//道具盾图标
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -52,7 +54,8 @@ RECT backpackButton = { BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y, BTN_BACKPACK
 RECT backpackDelete = { BTN_DELETE_BOX_START_X, BTN_DELETE_BOX_START_Y, BTN_DELETE_BOX_START_X + BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_START_Y + BTN_DELETE_BOX_HEIGHT };//定义背包关闭按钮的尺寸
 int x, y;//记录鼠标点击位置的坐标
 bool isPaused = false; // 游戏是否处于暂停状态
-
+bool show_reward_popup = false;
+int inventory[4][4]; // 0表示空，1表示被剑占用（示例）
 
 //TODO 更多的全局变量
 
@@ -329,6 +332,8 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_delete_box = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_DELETE_BOX));
 	bmp_start_bg = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_START_BG));
 	bmp_pause_bg = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_PAUSE));
+	bmp_sword = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_SWORD));
+	bmp_shield = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_SHIELD));
 
 
 	//添加按钮
@@ -601,6 +606,15 @@ void HandleConversationEvents(HWND hWnd)
 	//当前已经开启对话，再按一次空格关闭
 	if (in_conversation) {
 		in_conversation = false;
+		for (int i = 0; i < npcs.size(); i++) {
+			NPC* npc = npcs[i];
+			// 判断当前NPC是否对话已到最后一句
+			// 这里假设 conversations_before 有 3句，当 next_conversation_id 达到3时说明前面3句已说完
+			if (!npc->task_complete && npc->next_conversation_id >= npc->conversations_before.size() - 1) {
+				show_reward_popup = true;
+				npc->task_complete = true;
+			}
+		}
 		return;
 	}
 	//player与npc做碰撞检测，判断与哪个npc对话
@@ -610,14 +624,31 @@ void HandleConversationEvents(HWND hWnd)
 			((player->y <= npc->y + 10 && npc->y <= player->y + HUMAN_SIZE_Y + 10) || (npc->y <= player->y + 10 && player->y <= npc->y + HUMAN_SIZE_X + 10))) {
 			in_conversation = true;
 			if (!npc->task_complete) {
-				converstaion_content = npc->conversations_before[npc->next_conversation_id];
-				if(npc->next_conversation_id < npc->conversations_before.size()-1)
-					npc->next_conversation_id++;	//npc的这句话已经说完，下次该说下一句话了；如果已经说到最后一句话了，则一直重复
+				// 先检查 next_conversation_id 是否在范围内
+				if (npc->next_conversation_id >= npc->conversations_before.size()) {
+					// 超出范围，说明对话已结束，不再读取
+					// 可根据需要直接 break 或设置一个默认内容
+					converstaion_content = L"---------------";
+				}
+				else {
+					converstaion_content = npc->conversations_before[npc->next_conversation_id];
+				}
+
+				// 再决定是否递增 next_conversation_id
+				if (npc->next_conversation_id < npc->conversations_before.size() - 1)
+					npc->next_conversation_id++;
+
 			}
 			else {
-				converstaion_content = npc->conversations_after[npc->next_conversation_id];
+				if (npc->next_conversation_id >= npc->conversations_after.size()) {
+					converstaion_content = L"---------------";
+				}
+				else {
+					converstaion_content = npc->conversations_after[npc->next_conversation_id];
+				}
+
 				if (npc->next_conversation_id < npc->conversations_after.size() - 1)
-					npc->next_conversation_id++;	//npc的这句话已经说完，下次该说下一句话了；如果已经说到最后一句话了，则一直重复
+					npc->next_conversation_id++;
 			}
 			
 		}
@@ -821,9 +852,12 @@ NPC* CreateNPC(int x, int y, int npc_id)
 	{
 	case NPC_MAN1_ID: {
 		npc->img = bmp_NPC_MAN1;
-		npc->conversations_before.push_back(L"你好！我是花花镇的居民，很高兴认识你。");
-		npc->conversations_before.push_back(L"最近花花镇有些不太平，幽暗森林里时不时会传来一些声响，镇子里的人们每天都惴惴不安，可以请你帮忙调查一下吗？");
-		npc->conversations_before.push_back(L"你说幽暗森林怎么走？往城镇上方直走就是啦。");
+		npc->conversations_before.push_back(L"勇者！欢迎来到宝可梦：背包乱斗！");
+		npc->conversations_before.push_back(L"在这个世界中，宝可梦没有等级，只能通过道具不断变强！");
+		npc->conversations_before.push_back(L"最近下面的房子都被那只喷火龙糟蹋的不成样子了");
+		npc->conversations_before.push_back(L"送给你这些基础道具，每个道具会占据的空间，打开背包，将他们合理安放");
+		npc->conversations_before.push_back(L"哦对了，别忘了空间管理哦:-)");
+		npc->conversations_before.push_back(L"");
 		npc->conversations_after.push_back(L"这样啊，原来是有一只猫妖跑到森林里了，谢谢你把它赶走，这下镇子里又可以太平了。");
 		break;
 	}
@@ -1239,6 +1273,33 @@ void Paint(HWND hWnd)
 			rect.right = WINDOW_WIDTH - 110;
 			rect.bottom = WINDOW_HEIGHT - 50;
 			DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
+		}
+		if (show_reward_popup) {
+			// 绘制奖励图标
+			SelectObject(hdc_loadBmp, bmp_sword);
+			// 如果你的sword图标大小是已知的(如32x32)，就这样画
+			SelectObject(hdc_loadBmp, bmp_sword);
+			TransparentBlt(
+				hdc_memBuffer,
+				SWORD_START_X, SWORD_START_Y,    // 背景框在界面上的起始位置
+				SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+			SelectObject(hdc_loadBmp, bmp_shield);
+			// 如果你的sword图标大小是已知的(如32x32)，就这样画
+			SelectObject(hdc_loadBmp, bmp_shield);
+			TransparentBlt(
+				hdc_memBuffer,
+				SHIELD_START_X, SHIELD_START_Y,    // 背景框在界面上的起始位置
+				SHIELD_WIDTH, SHIELD_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				SHIELD_WIDTH, SHIELD_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
 		}
 		}
 

@@ -150,6 +150,8 @@
     <ResourceCompile Include="PuzzleGame.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\程序设计基础_2024_大作业_框架与模板\src\PuzzleGame\resources\shield.bmp" />
+    <Image Include="..\..\..\程序设计基础_2024_大作业_框架与模板\src\PuzzleGame\resources\sword.bmp" />
     <Image Include="PuzzleGame.ico" />
     <Image Include="resources\background.bmp" />
     <Image Include="resources\backpack.bmp" />

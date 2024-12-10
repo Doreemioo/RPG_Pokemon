@@ -90,5 +90,11 @@
     <Image Include="resources\pause.bmp">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="..\..\..\程序设计基础_2024_大作业_框架与模板\src\PuzzleGame\resources\sword.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="..\..\..\程序设计基础_2024_大作业_框架与模板\src\PuzzleGame\resources\shield.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

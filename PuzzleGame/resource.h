@@ -33,6 +33,9 @@
 #define IDB_START_BG                    147
 #define IDB_BITMAP4                     148
 #define IDB_PAUSE                       148
+#define IDB_SWORD                       149
+#define IDB_BITMAP6                     151
+#define IDB_SHIELD                      151
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -40,7 +43,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        149
+#define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110
