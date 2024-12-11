@@ -312,6 +312,8 @@ bool CheckCollision1(int x, int y, int direction, int map[20][28]);
 //宝可梦随机运动函数
 void RandomizePokemonMovement(Pokemon* pokemon);
 
+void HandleDrop(HWND hWnd, Item& item, int inventory[4][4], int startX, int startY, int cellWidth, int cellHeight);
+
 #pragma region 其它游戏状态处理函数声明
 
 // 添加按钮函数

@@ -499,9 +499,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				shield.inInventory = false; // 确保状态更新正确
 			}
 			InvalidateRect(hWnd, NULL, FALSE);
-			}
-			break;
 		}
+		break;
+	}
 	case WM_TIMER:
 	{
 		// 定时器事件
@@ -527,10 +527,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
-		return 0;
+	return 0;
 	}
 }
-
 
 // 初始化游戏窗体函数
 void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
@@ -1315,189 +1314,187 @@ void Paint(HWND hWnd)
 		}
 		else
 		{
-		//绘制地图
-		SelectObject(hdc_loadBmp, bmp_map);
-		for (int i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
-			for (int j = 0; j < sizeof(map[0]) / sizeof(map[0][0]); j++) {
-				TransparentBlt(
-					hdc_memBuffer,
-					j * BLOCK_SIZE_X, i * BLOCK_SIZE_Y,							// 界面上起始绘制点
-					BLOCK_SIZE_X, BLOCK_SIZE_Y,									// 界面上绘制宽度高度
-					hdc_loadBmp,
-					(map[i][j] % 8) * BLOCK_BITMAP_SIZE_X,						// 位图上起始绘制点
-					(map[i][j] / 8) * BLOCK_BITMAP_SIZE_Y,
-					BLOCK_BITMAP_SIZE_X, BLOCK_BITMAP_SIZE_Y,					// 位图上绘制宽度高度
-					RGB(255, 255, 255));										// 位图上的哪个颜色会被视为背景
+			//绘制地图
+			SelectObject(hdc_loadBmp, bmp_map);
+			for (int i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
+				for (int j = 0; j < sizeof(map[0]) / sizeof(map[0][0]); j++) {
+					TransparentBlt(
+						hdc_memBuffer,
+						j * BLOCK_SIZE_X, i * BLOCK_SIZE_Y,							// 界面上起始绘制点
+						BLOCK_SIZE_X, BLOCK_SIZE_Y,									// 界面上绘制宽度高度
+						hdc_loadBmp,
+						(map[i][j] % 8) * BLOCK_BITMAP_SIZE_X,						// 位图上起始绘制点
+						(map[i][j] / 8) * BLOCK_BITMAP_SIZE_Y,
+						BLOCK_BITMAP_SIZE_X, BLOCK_BITMAP_SIZE_Y,					// 位图上绘制宽度高度
+						RGB(255, 255, 255));										// 位图上的哪个颜色会被视为背景
+				}
 			}
-		}
 
-		// 绘制玩家
-		SelectObject(hdc_loadBmp, player->img);
-		TransparentBlt(
-			hdc_memBuffer,
-			player->x - 0.5 * HUMAN_SIZE_X, player->y - 0.5 * HUMAN_SIZE_Y,			// 界面上起始绘制点
-			HUMAN_SIZE_X, HUMAN_SIZE_Y,											// 界面上绘制宽度高度
-			hdc_loadBmp,
-			HUMAN_BITMAP_SIZE_X * player->frame_column, HUMAN_BITMAP_SIZE_Y * player->frame_row,	// 位图上起始绘制点
-			HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
-			RGB(255, 255, 255)
-		);
-		//绘制npc
-		for (int i = 0; i < npcs.size(); i++) {
-			if (npcs[i]->visible) {
-				SelectObject(hdc_loadBmp, npcs[i]->img);
-				TransparentBlt(
-					hdc_memBuffer,
-					npcs[i]->x - 0.5 * HUMAN_SIZE_X, npcs[i]->y - 0.5 * HUMAN_SIZE_Y,			// 界面上起始绘制点
-					HUMAN_SIZE_X, HUMAN_SIZE_Y,											// 界面上绘制宽度高度
-					hdc_loadBmp,
-					HUMAN_BITMAP_SIZE_X * npcs[i]->frame_column, HUMAN_BITMAP_SIZE_Y * npcs[i]->frame_row,	// 位图上起始绘制点
-					HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
-					RGB(255, 255, 255)
-				);
-			}
-		}
-		//绘制怪物
-		for (int i = 0; i < monsters.size(); i++) {
-			if (monsters[i]->visible) {
-				SelectObject(hdc_loadBmp, monsters[i]->img);
-				TransparentBlt(
-					hdc_memBuffer,
-					monsters[i]->x - 0.5 * MOSTER_SIZE_X, monsters[i]->y - 0.5 * MOSTER_SIZE_Y,		// 界面上起始绘制点
-					MOSTER_SIZE_X, MOSTER_SIZE_Y,											// 界面上绘制宽度高度
-					hdc_loadBmp,
-					MOSTER_BITMAP_SIZE_X * monsters[i]->frame_column, MOSTER_BITMAP_SIZE_Y * monsters[i]->frame_row,	// 位图上起始绘制点
-					MOSTER_BITMAP_SIZE_X, MOSTER_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
-					RGB(255, 255, 255)
-				);
-			}
-		}
-		//绘制宝可梦
-		for (int i = 0; i < pokemons.size(); i++) {
-			if (pokemons[i]->visible) {
-				SelectObject(hdc_loadBmp, pokemons[i]->img);
-				TransparentBlt(
-					hdc_memBuffer,
-					pokemons[i]->x - 0.5 * POKEMON_SIZE_X, pokemons[i]->y - 0.5 * POKEMON_SIZE_Y,		// 界面上起始绘制点
-					POKEMON_SIZE_X, POKEMON_SIZE_Y,											// 界面上绘制宽度高度
-					hdc_loadBmp,
-					POKEMON_BITMAP_SIZE_X * pokemons[i]->frame_column, POKEMON_BITMAP_SIZE_Y * pokemons[i]->frame_row,	// 位图上起始绘制点
-					POKEMON_BITMAP_SIZE_X, POKEMON_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
-					RGB(255, 255, 255)
-				);
-			}
-		}
-		
-		//绘制血条蓝条背景框
-		SelectObject(hdc_loadBmp, bmp_hp_mp_box);
-		TransparentBlt(
-			hdc_memBuffer,
-			HP_MP_BOX_START_X, HP_MP_BOX_START_Y,    // 背景框在界面上的起始位置
-			HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // 背景框宽高
-			hdc_loadBmp,
-			0, 0,                                   // 背景框在 BMP 图上的起始位置
-			HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // BMP 图中背景框的宽高
-			RGB(255, 255, 255)                      // 背景透明色
-		);
-
-		//绘制蓝条
-		for (int i = 0; i < currentmpBlocks; ++i) {
-			SelectObject(hdc_loadBmp, bmp_mpbar);
+			// 绘制玩家
+			SelectObject(hdc_loadBmp, player->img);
 			TransparentBlt(
 				hdc_memBuffer,
-				MP_START_X + i * MP_BLOCK_WIDTH, // 每块横向排列
-				MP_START_Y,                           // 固定纵坐标
-				MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT, // 每块血条的宽高
+				player->x - 0.5 * HUMAN_SIZE_X, player->y - 0.5 * HUMAN_SIZE_Y,			// 界面上起始绘制点
+				HUMAN_SIZE_X, HUMAN_SIZE_Y,											// 界面上绘制宽度高度
 				hdc_loadBmp,
-				0, 0,
-				MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT,
-				RGB(255, 255, 255) // 背景透明色
-			);
-		}
-
-		//绘制血条
-		for (int i = 0; i < currentBloodBlocks; ++i) {
-			SelectObject(hdc_loadBmp, bmp_bloodbar);
-			TransparentBlt(
-				hdc_memBuffer,
-				BLOOD_START_X + i * BLOOD_BLOCK_WIDTH, // 每块横向排列
-				BLOOD_START_Y,                           // 固定纵坐标
-				BLOOD_BLOCK_WIDTH, BLOOD_BLOCK_HEIGHT, // 每块血条的宽高
-				hdc_loadBmp,
-				0, 0,
-				BLOOD_BLOCK_WIDTH, BLOOD_BLOCK_HEIGHT,
-				RGB(255, 255, 255) // 背景透明色
-			);
-		}
-
-		if (isBackpackOpen)
-		{
-			//绘制背包背景
-			SelectObject(hdc_loadBmp, bmp_backpack);
-			TransparentBlt(
-				hdc_memBuffer,
-				BACKPACK_START_X, BACKPACK_START_Y,    // 背景框在界面上的起始位置
-				BACKPACK_WIDTH, BACKPACK_HEIGHT,      // 背景框宽高
-				hdc_loadBmp,
-				0, 0,                                   // 背景框在 BMP 图上的起始位置
-				BACKPACK_WIDTH, BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
-				RGB(255, 255, 255)                      // 背景透明色
-			);
-			SelectObject(hdc_loadBmp, bmp_delete_box);
-			TransparentBlt(
-				hdc_memBuffer,
-				BTN_DELETE_BOX_START_X, BTN_DELETE_BOX_START_Y,    // 背景框在界面上的起始位置
-				BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_HEIGHT,      // 背景框宽高
-				hdc_loadBmp,
-				0, 0,                                   // 背景框在 BMP 图上的起始位置
-				BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_HEIGHT,      // BMP 图中背景框的宽高
-				RGB(255, 255, 255)                      // 背景透明色
-			);
-		}
-
-		if (!isBackpackOpen)
-		{
-			//绘制背包按钮
-			SelectObject(hdc_loadBmp, bmp_btn_backpack);
-			TransparentBlt(
-				hdc_memBuffer,
-				BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y,    // 背景框在界面上的起始位置
-				BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // 背景框宽高
-				hdc_loadBmp,
-				0, 0,                                   // 背景框在 BMP 图上的起始位置
-				BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
-				RGB(255, 255, 255)                      // 背景透明色
-			);
-		}
-		//如果正处在对话状态：绘制对话框
-		if (in_conversation) {
-			SelectObject(hdc_loadBmp, bmp_dialog);
-			TransparentBlt(
-				hdc_memBuffer,
-				0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
-				hdc_loadBmp,
-				0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+				HUMAN_BITMAP_SIZE_X * player->frame_column, HUMAN_BITMAP_SIZE_Y * player->frame_row,	// 位图上起始绘制点
+				HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
 				RGB(255, 255, 255)
 			);
-			//绘制文字
-			HFONT hFont = CreateFontW(
-				20, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-				OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
-				L"SimSun");		//创建字体
-			SelectObject(hdc_memBuffer, hFont);
-			SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
-			SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
-			RECT rect;
-			rect.left = 50;
-			rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
-			rect.right = WINDOW_WIDTH - 110;
-			rect.bottom = WINDOW_HEIGHT - 50;
-			DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
-		}
-		bool swordVisible = false;
-		if (sword.inInventory && shield.inInventory)
-		{
+			//绘制npc
+			for (int i = 0; i < npcs.size(); i++) {
+				if (npcs[i]->visible) {
+					SelectObject(hdc_loadBmp, npcs[i]->img);
+					TransparentBlt(
+						hdc_memBuffer,
+						npcs[i]->x - 0.5 * HUMAN_SIZE_X, npcs[i]->y - 0.5 * HUMAN_SIZE_Y,			// 界面上起始绘制点
+						HUMAN_SIZE_X, HUMAN_SIZE_Y,											// 界面上绘制宽度高度
+						hdc_loadBmp,
+						HUMAN_BITMAP_SIZE_X * npcs[i]->frame_column, HUMAN_BITMAP_SIZE_Y * npcs[i]->frame_row,	// 位图上起始绘制点
+						HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+						RGB(255, 255, 255)
+					);
+				}
+			}
+			//绘制怪物
+			for (int i = 0; i < monsters.size(); i++) {
+				if (monsters[i]->visible) {
+					SelectObject(hdc_loadBmp, monsters[i]->img);
+					TransparentBlt(
+						hdc_memBuffer,
+						monsters[i]->x - 0.5 * MOSTER_SIZE_X, monsters[i]->y - 0.5 * MOSTER_SIZE_Y,		// 界面上起始绘制点
+						MOSTER_SIZE_X, MOSTER_SIZE_Y,											// 界面上绘制宽度高度
+						hdc_loadBmp,
+						MOSTER_BITMAP_SIZE_X * monsters[i]->frame_column, MOSTER_BITMAP_SIZE_Y * monsters[i]->frame_row,	// 位图上起始绘制点
+						MOSTER_BITMAP_SIZE_X, MOSTER_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+						RGB(255, 255, 255)
+					);
+				}
+			}
+			//绘制宝可梦
+			for (int i = 0; i < pokemons.size(); i++) {
+				if (pokemons[i]->visible) {
+					SelectObject(hdc_loadBmp, pokemons[i]->img);
+					TransparentBlt(
+						hdc_memBuffer,
+						pokemons[i]->x - 0.5 * POKEMON_SIZE_X, pokemons[i]->y - 0.5 * POKEMON_SIZE_Y,		// 界面上起始绘制点
+						POKEMON_SIZE_X, POKEMON_SIZE_Y,											// 界面上绘制宽度高度
+						hdc_loadBmp,
+						POKEMON_BITMAP_SIZE_X * pokemons[i]->frame_column, POKEMON_BITMAP_SIZE_Y * pokemons[i]->frame_row,	// 位图上起始绘制点
+						POKEMON_BITMAP_SIZE_X, POKEMON_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+						RGB(255, 255, 255)
+					);
+				}
+			}
+
+			//绘制血条蓝条背景框
+			SelectObject(hdc_loadBmp, bmp_hp_mp_box);
+			TransparentBlt(
+				hdc_memBuffer,
+				HP_MP_BOX_START_X, HP_MP_BOX_START_Y,    // 背景框在界面上的起始位置
+				HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+
+			//绘制蓝条
+			for (int i = 0; i < currentmpBlocks; ++i) {
+				SelectObject(hdc_loadBmp, bmp_mpbar);
+				TransparentBlt(
+					hdc_memBuffer,
+					MP_START_X + i * MP_BLOCK_WIDTH, // 每块横向排列
+					MP_START_Y,                           // 固定纵坐标
+					MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT, // 每块血条的宽高
+					hdc_loadBmp,
+					0, 0,
+					MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT,
+					RGB(255, 255, 255) // 背景透明色
+				);
+			}
+
+			//绘制血条
+			for (int i = 0; i < currentBloodBlocks; ++i) {
+				SelectObject(hdc_loadBmp, bmp_bloodbar);
+				TransparentBlt(
+					hdc_memBuffer,
+					BLOOD_START_X + i * BLOOD_BLOCK_WIDTH, // 每块横向排列
+					BLOOD_START_Y,                           // 固定纵坐标
+					BLOOD_BLOCK_WIDTH, BLOOD_BLOCK_HEIGHT, // 每块血条的宽高
+					hdc_loadBmp,
+					0, 0,
+					BLOOD_BLOCK_WIDTH, BLOOD_BLOCK_HEIGHT,
+					RGB(255, 255, 255) // 背景透明色
+				);
+			}
+
 			if (isBackpackOpen)
+			{
+				//绘制背包背景
+				SelectObject(hdc_loadBmp, bmp_backpack);
+				TransparentBlt(
+					hdc_memBuffer,
+					BACKPACK_START_X, BACKPACK_START_Y,    // 背景框在界面上的起始位置
+					BACKPACK_WIDTH, BACKPACK_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					BACKPACK_WIDTH, BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+				SelectObject(hdc_loadBmp, bmp_delete_box);
+				TransparentBlt(
+					hdc_memBuffer,
+					BTN_DELETE_BOX_START_X, BTN_DELETE_BOX_START_Y,    // 背景框在界面上的起始位置
+					BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+			}
+
+			if (!isBackpackOpen)
+			{
+				//绘制背包按钮
+				SelectObject(hdc_loadBmp, bmp_btn_backpack);
+				TransparentBlt(
+					hdc_memBuffer,
+					BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y,    // 背景框在界面上的起始位置
+					BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+			}
+			//如果正处在对话状态：绘制对话框
+			if (in_conversation) {
+				SelectObject(hdc_loadBmp, bmp_dialog);
+				TransparentBlt(
+					hdc_memBuffer,
+					0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
+					hdc_loadBmp,
+					0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+					RGB(255, 255, 255)
+				);
+				//绘制文字
+				HFONT hFont = CreateFontW(
+					20, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+					OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+					L"SimSun");		//创建字体
+				SelectObject(hdc_memBuffer, hFont);
+				SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
+				SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
+				RECT rect;
+				rect.left = 50;
+				rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
+				rect.right = WINDOW_WIDTH - 110;
+				rect.bottom = WINDOW_HEIGHT - 50;
+				DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
+			}
+			bool swordVisible = false;
+			if (show_reward_popup)
 			{
 				SelectObject(hdc_loadBmp, bmp_sword);
 				TransparentBlt(
@@ -1534,6 +1531,7 @@ void Paint(HWND hWnd)
 					swordDrawW, swordDrawH,
 					RGB(255, 255, 255)
 				);
+
 				SelectObject(hdc_loadBmp, bmp_shield);
 				TransparentBlt(
 					hdc_memBuffer,
@@ -1568,129 +1566,95 @@ void Paint(HWND hWnd)
 					shieldDrawW, shieldDrawH,
 					RGB(255, 255, 255)
 				);
-
-
-			}
-		}
-		if (show_reward_popup)
-		{
-			SelectObject(hdc_loadBmp, bmp_sword);
-			TransparentBlt(
-				hdc_memBuffer,
-				-1000, -1000,    // 背景框在界面上的起始位置
-				SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
-				hdc_loadBmp,
-				0, 0,                                   // 背景框在 BMP 图上的起始位置
-				SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
-				RGB(255, 255, 255)                      // 背景透明色
-			);
-			// 绘制剑
-			SelectObject(hdc_loadBmp, sword.img);
-			// 假设剑的单个方格对应的图案大小为32x32
-			int swordDrawW = 56.25 * sword.width;
-			int swordDrawH = 56.25 * sword.height;
-
-			int drawX, drawY;
-			if (sword.inInventory) {
-				drawX = BACKPACK_START_X + sword.inventoryX * CELL_WIDTH;
-				drawY = BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT;
-			}
-			else {
-				drawX = sword.screenX;
-				drawY = sword.screenY;
 			}
 
-			TransparentBlt(
-				hdc_memBuffer,
-				drawX, drawY,
-				swordDrawW, swordDrawH,
-				hdc_loadBmp,
-				0, 0,
-				swordDrawW, swordDrawH,
-				RGB(255, 255, 255)
-			);
+			else if (sword.inInventory || shield.inInventory || sword.isDragging || shield.isDragging)
+			{
+				if (isBackpackOpen)
+				{
+					SelectObject(hdc_loadBmp, bmp_sword);
+					TransparentBlt(
+						hdc_memBuffer,
+						-1000, -1000,    // 背景框在界面上的起始位置
+						SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
+						hdc_loadBmp,
+						0, 0,                                   // 背景框在 BMP 图上的起始位置
+						SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
+						RGB(255, 255, 255)                      // 背景透明色
+					);
+					// 绘制剑
+					SelectObject(hdc_loadBmp, sword.img);
+					// 假设剑的单个方格对应的图案大小为32x32
+					int swordDrawW = 56.25 * sword.width;
+					int swordDrawH = 56.25 * sword.height;
 
-			SelectObject(hdc_loadBmp, bmp_shield);
-			TransparentBlt(
-				hdc_memBuffer,
-				-1000, -1000,    // 背景框在界面上的起始位置
-				SHIELD_WIDTH, SHIELD_HEIGHT,      // 背景框宽高
-				hdc_loadBmp,
-				0, 0,                                   // 背景框在 BMP 图上的起始位置
-				SHIELD_WIDTH, SHIELD_HEIGHT,      // BMP 图中背景框的宽高
-				RGB(255, 255, 255)                      // 背景透明色
-			);
-			SelectObject(hdc_loadBmp, shield.img);
-			// 假设剑的单个方格对应的图案大小为32x32
-			int shieldDrawW = 56.25 * shield.width;
-			int shieldDrawH = 56.25 * shield.height;
+					int drawX, drawY;
+					if (sword.inInventory) {
+						drawX = BACKPACK_START_X + sword.inventoryX * CELL_WIDTH;
+						drawY = BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT;
+					}
+					else {
+						drawX = sword.screenX;
+						drawY = sword.screenY;
+					}
 
-			int drawX1, drawY1;
-			if (shield.inInventory) {
-				drawX1 = BACKPACK_START_X + shield.inventoryX * CELL_WIDTH;
-				drawY1 = BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT;
+					TransparentBlt(
+						hdc_memBuffer,
+						drawX, drawY,
+						swordDrawW, swordDrawH,
+						hdc_loadBmp,
+						0, 0,
+						swordDrawW, swordDrawH,
+						RGB(255, 255, 255)
+					);
+					SelectObject(hdc_loadBmp, bmp_shield);
+					TransparentBlt(
+						hdc_memBuffer,
+						-1000, -1000,    // 背景框在界面上的起始位置
+						SHIELD_WIDTH, SHIELD_HEIGHT,      // 背景框宽高
+						hdc_loadBmp,
+						0, 0,                                   // 背景框在 BMP 图上的起始位置
+						SHIELD_WIDTH, SHIELD_HEIGHT,      // BMP 图中背景框的宽高
+						RGB(255, 255, 255)                      // 背景透明色
+					);
+					SelectObject(hdc_loadBmp, shield.img);
+					// 假设剑的单个方格对应的图案大小为32x32
+					int shieldDrawW = 56.25 * shield.width;
+					int shieldDrawH = 56.25 * shield.height;
+
+					int drawX1, drawY1;
+					if (shield.inInventory) {
+						drawX1 = BACKPACK_START_X + shield.inventoryX * CELL_WIDTH;
+						drawY1 = BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT;
+					}
+					else {
+						drawX1 = shield.screenX;
+						drawY1 = shield.screenY;
+					}
+
+					TransparentBlt(
+						hdc_memBuffer,
+						drawX1, drawY1,
+						shieldDrawW, shieldDrawH,
+						hdc_loadBmp,
+						0, 0,
+						shieldDrawW, shieldDrawH,
+						RGB(255, 255, 255)
+					);
+
+
+				}
 			}
-			else {
-				drawX1 = shield.screenX;
-				drawY1 = shield.screenY;
+
+			for (int r = 0; r < 4; r++) {
+				for (int c = 0; c < 4; c++) {
+					// 这里可以绘制格子边框等
+					int gx = BACKPACK_START_X + c * CELL_WIDTH;
+					int gy = BACKPACK_START_Y + r * CELL_HEIGHT;
+					// 可选：绘制格子框
+					// Rectangle(hdc_memBuffer, gx, gy, gx + CELL_WIDTH, gy + CELL_HEIGHT);
+				}
 			}
-
-			TransparentBlt(
-				hdc_memBuffer,
-				drawX1, drawY1,
-				shieldDrawW, shieldDrawH,
-				hdc_loadBmp,
-				0, 0,
-				shieldDrawW, shieldDrawH,
-				RGB(255, 255, 255)
-			);
-		}
-
-		if (isBackpackOpen && sword.inInventory) {
-			SelectObject(hdc_loadBmp, sword.img);
-			int swordDrawW = 56.25 * sword.width;
-			int swordDrawH = 56.25 * sword.height;
-			int drawX = BACKPACK_START_X + sword.inventoryX * CELL_WIDTH;
-			int drawY = BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT;
-
-			TransparentBlt(
-				hdc_memBuffer,
-				drawX, drawY,
-				swordDrawW, swordDrawH,
-				hdc_loadBmp,
-				0, 0,
-				swordDrawW, swordDrawH,
-				RGB(255, 255, 255)
-			);
-		}
-
-		// 绘制盾牌
-		if (isBackpackOpen && shield.inInventory) {
-			SelectObject(hdc_loadBmp, shield.img);
-			int shieldDrawW = 56.25 * shield.width;
-			int shieldDrawH = 56.25 * shield.height;
-			int drawX = BACKPACK_START_X + shield.inventoryX * CELL_WIDTH;
-			int drawY = BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT;
-
-			TransparentBlt(
-				hdc_memBuffer,
-				drawX, drawY,
-				shieldDrawW, shieldDrawH,
-				hdc_loadBmp,
-				0, 0,
-				shieldDrawW, shieldDrawH,
-				RGB(255, 255, 255)
-			);
-		}
-		for (int r = 0; r < 4; r++) {
-			for (int c = 0; c < 4; c++) {
-				// 这里可以绘制格子边框等
-				int gx = BACKPACK_START_X + c * CELL_WIDTH;
-				int gy = BACKPACK_START_Y + r * CELL_HEIGHT;
-				// 可选：绘制格子框
-				// Rectangle(hdc_memBuffer, gx, gy, gx + CELL_WIDTH, gy + CELL_HEIGHT);
-			}
-		}
 		}
 
 	}
