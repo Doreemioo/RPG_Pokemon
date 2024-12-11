@@ -57,7 +57,7 @@ bool isPaused = false; // 游戏是否处于暂停状态
 bool show_reward_popup = false;
 int inventory[4][4]; // 0表示空，1表示被剑占用（示例）
 
-Item sword = {
+Item sword1 = {
 	false, // inInventory
 	0,     // inventoryX
 	0,     // inventoryY
@@ -67,6 +67,33 @@ Item sword = {
 	0, 0,  // offsetX, offsetY
 	300, 200, // screenX, screenY
 	300, 200,
+	0,
+	{
+		{1, 0, 0, 0},
+		{1, 0, 0, 0},
+		{1, 0, 0, 0},
+		{0, 0, 0, 0}
+	},
+	bmp_sword  // img
+};
+
+Item sword2 = {
+	false, // inInventory
+	0,     // inventoryX
+	0,     // inventoryY
+	1,     // width
+	3,     // height
+	false, // isDragging
+	0, 0,  // offsetX, offsetY
+	400, 200, // screenX, screenY
+	400, 200,
+	0,
+	{
+		{1, 0, 0, 0},
+		{1, 0, 0, 0},
+		{1, 0, 0, 0},
+		{0, 0, 0, 0} 
+	},
 	bmp_sword  // img
 };
 
@@ -78,8 +105,15 @@ Item shield = {
 	2,     // height
 	false, // isDragging
 	0, 0,  // offsetX, offsetY
-	400, 200, // screenX, screenY
-	400, 200,
+	500, 200, // screenX, screenY
+	500, 200,
+	0,
+	{
+		{1, 1, 0, 0},
+		{1, 1, 0, 0},
+		{0, 0, 0, 0},
+		{0, 0, 0, 0}
+	},
 	bmp_shield  // img
 };
 
@@ -261,13 +295,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int swordW = 56.25 * sword.width;
-	int swordH = 56.25 * sword.height;
+	int swordW1 = 56.25 * sword1.width;
+	int swordH1 = 56.25 * sword1.height;
+	int swordW2 = 56.25 * sword2.width;
+	int swordH2 = 56.25 * sword2.height;
 	int shieldW = 56.25 * shield.width;
 	int shieldH = 56.25 * shield.height;
 
-	int swordScreenX = sword.inInventory ? (BACKPACK_START_X + sword.inventoryX * CELL_WIDTH) : sword.screenX;
-	int swordScreenY = sword.inInventory ? (BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT) : sword.screenY;
+	int sword1ScreenX = sword1.inInventory ? (BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH) : sword1.screenX;
+	int sword1ScreenY = sword1.inInventory ? (BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT) : sword1.screenY;
+	int sword2ScreenX = sword2.inInventory ? (BACKPACK_START_X + sword2.inventoryX * CELL_WIDTH) : sword2.screenX;
+	int sword2ScreenY = sword2.inInventory ? (BACKPACK_START_Y + sword2.inventoryY * CELL_HEIGHT) : sword2.screenY;
 	int shieldScreenX = shield.inInventory ? (BACKPACK_START_X + shield.inventoryX * CELL_WIDTH) : shield.screenX;
 	int shieldScreenY = shield.inInventory ? (BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT) : shield.screenY;
 
@@ -305,12 +343,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// 鼠标移动事件
 		MouseMove(hWnd, wParam, lParam);
 
-		if (sword.isDragging) {
+		if (sword1.isDragging) {
 			int mx = LOWORD(lParam);
 			int my = HIWORD(lParam);
 			// 更新剑在屏幕上的位置
-			sword.screenX = mx - sword.offsetX;
-			sword.screenY = my - sword.offsetY;
+			sword1.screenX = mx - sword1.offsetX;
+			sword1.screenY = my - sword1.offsetY;
+			InvalidateRect(hWnd, NULL, FALSE); // 刷新绘图
+		}
+		if (sword2.isDragging) {
+			int mx = LOWORD(lParam);
+			int my = HIWORD(lParam);
+			// 更新剑在屏幕上的位置
+			sword2.screenX = mx - sword2.offsetX;
+			sword2.screenY = my - sword2.offsetY;
 			InvalidateRect(hWnd, NULL, FALSE); // 刷新绘图
 		}
 		if (shield.isDragging) {
@@ -329,36 +375,58 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		x = LOWORD(lParam);
 		y = HIWORD(lParam);
 
-		swordW = 56.25 * sword.width;
-		swordH = 56.25 * sword.height;
+		swordW1 = 56.25 * sword1.width;
+		swordH1 = 56.25 * sword1.height;
 		shieldW = 56.25 * shield.width;
 		shieldH = 56.25 * shield.height;
-		swordScreenX = sword.inInventory ?
-			(BACKPACK_START_X + sword.inventoryX * CELL_WIDTH) : sword.screenX;
-		swordScreenY = sword.inInventory ?
-			(BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT) : sword.screenY;
+		sword1ScreenX = sword1.inInventory ?
+			(BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH) : sword1.screenX;
+		sword1ScreenY = sword1.inInventory ?
+			(BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT) : sword1.screenY;
+		sword2ScreenX = sword2.inInventory ?
+			(BACKPACK_START_X + sword2.inventoryX * CELL_WIDTH) : sword2.screenX;
+		sword2ScreenY = sword2.inInventory ?
+			(BACKPACK_START_Y + sword2.inventoryY * CELL_HEIGHT) : sword2.screenY;
 		shieldScreenX = shield.inInventory ?
 			(BACKPACK_START_X + shield.inventoryX * CELL_WIDTH) : shield.screenX;
 		shieldScreenY = shield.inInventory ?
 			(BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT) : shield.screenY;
 
 		// 然后再做点击检测、拖拽逻辑
-		if (x >= swordScreenX && x < swordScreenX + swordW &&
-			y >= swordScreenY && y < swordScreenY + swordH) {
+		if (x >= sword1ScreenX && x < sword1ScreenX + swordW1 &&
+			y >= sword1ScreenY && y < sword1ScreenY + swordH1) {
 			// 点中了剑
-			sword.isDragging = true;
-			sword.offsetX = x - swordScreenX;
-			sword.offsetY = y - swordScreenY;
+			sword1.isDragging = true;
+			sword1.offsetX = x - sword1ScreenX;
+			sword1.offsetY = y - sword1ScreenY;
 
-			sword.startX = sword.screenX;
-			sword.startY = sword.screenY;
+			sword1.startX = sword1.screenX;
+			sword1.startY = sword1.screenY;
 
-			if (sword.inInventory) {
+			if (sword1.inInventory) {
 				// 清空背包格子
-				for (int i = 0; i < sword.width; i++) {
-					inventory[sword.inventoryY][sword.inventoryX + i] = 0;
+				for (int i = 0; i < sword1.width; i++) {
+					inventory[sword1.inventoryY][sword1.inventoryX + i] = 0;
 				}
-				sword.inInventory = false;
+				sword1.inInventory = false;
+			}
+		}
+		if (x >= sword2ScreenX && x < sword2ScreenX + swordW2 &&
+			y >= sword2ScreenY && y < sword2ScreenY + swordH2) {
+			// 点中了剑
+			sword2.isDragging = true;
+			sword2.offsetX = x - sword2ScreenX;
+			sword2.offsetY = y - sword2ScreenY;
+
+			sword2.startX = sword2.screenX;
+			sword2.startY = sword2.screenY;
+
+			if (sword2.inInventory) {
+				// 清空背包格子
+				for (int i = 0; i < sword2.width; i++) {
+					inventory[sword2.inventoryY][sword2.inventoryX + i] = 0;
+				}
+				sword2.inInventory = false;
 			}
 		}
 		if (x >= shieldScreenX && x < shieldScreenX + shieldW &&
@@ -400,8 +468,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		// 鼠标左键松开事件
 		LButtonUp(hWnd, wParam, lParam);
-		if (sword.isDragging && isBackpackOpen) {
-			sword.isDragging = false;
+		if (sword1.isDragging && isBackpackOpen) {
+			sword1.isDragging = false;
 
 			int mx = LOWORD(lParam);
 			int my = HIWORD(lParam);
@@ -413,10 +481,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			// 检查是否能放置剑（需要3个连续横向格子）
 			bool canPlace = false;
-			if (cellX >= 0 && cellY >= 0 && cellX + sword.width - 1 < 4 && cellY < 4) {
+			if (cellX >= 0 && cellY >= 0 && cellX + sword1.width - 1 < 4 && cellY < 4) {
 				// 检查这3个格子是否为空
 				bool allEmpty = true;
-				for (int i = 0; i < sword.width; i++) {
+				for (int i = 0; i < sword1.width; i++) {
 					if (inventory[cellY][cellX + i] != 0) {
 						allEmpty = false;
 						break;
@@ -429,24 +497,74 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			if (canPlace) {
 				// 放置剑
-				for (int i = 0; i < sword.width; i++) {
-					for (int j = 0; j < sword.height; j++)
+				for (int i = 0; i < sword1.width; i++) {
+					for (int j = 0; j < sword1.height; j++)
 					{
 						inventory[cellY + j][cellX + i] = 1;
 					}
 				}
-				sword.inInventory = true;
-				sword.inventoryX = cellX;
-				sword.inventoryY = cellY;
+				sword1.inInventory = true;
+				sword1.inventoryX = cellX;
+				sword1.inventoryY = cellY;
 
-				if (show_reward_popup && sword.inInventory && shield.inInventory) {
+				if (show_reward_popup && sword1.inInventory && sword2.inInventory && shield.inInventory) {
 					show_reward_popup = false; // 关闭奖励弹窗
 				}
 			}
 			else {
-				sword.screenX = sword.startX;
-				sword.screenY = sword.startY;
-				sword.inInventory = false; // 确保状态更新正确
+				sword1.screenX = sword1.startX;
+				sword1.screenY = sword1.startY;
+				sword1.inInventory = false; // 确保状态更新正确
+			}
+		}
+
+		if (sword2.isDragging && isBackpackOpen) {
+			sword2.isDragging = false;
+
+			int mx = LOWORD(lParam);
+			int my = HIWORD(lParam);
+
+			// 尝试将剑放入背包
+			// 计算鼠标松开时对应的背包格子坐标
+			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
+			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
+
+			// 检查是否能放置剑（需要3个连续横向格子）
+			bool canPlace = false;
+			if (cellX >= 0 && cellY >= 0 && cellX + sword2.width - 1 < 4 && cellY < 4) {
+				// 检查这3个格子是否为空
+				bool allEmpty = true;
+				for (int i = 0; i < sword2.width; i++) {
+					if (inventory[cellY][cellX + i] != 0) {
+						allEmpty = false;
+						break;
+					}
+				}
+				if (allEmpty) {
+					canPlace = true;
+				}
+			}
+
+			if (canPlace) {
+				// 放置剑
+				for (int i = 0; i < sword2.width; i++) {
+					for (int j = 0; j < sword2.height; j++)
+					{
+						inventory[cellY + j][cellX + i] = 1;
+					}
+				}
+				sword2.inInventory = true;
+				sword2.inventoryX = cellX;
+				sword2.inventoryY = cellY;
+
+				if (show_reward_popup && sword1.inInventory && sword2.inInventory && shield.inInventory) {
+					show_reward_popup = false; // 关闭奖励弹窗
+				}
+			}
+			else {
+				sword2.screenX = sword2.startX;
+				sword2.screenY = sword2.startY;
+				sword2.inInventory = false; // 确保状态更新正确
 			}
 		}
 
@@ -489,7 +607,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				shield.inventoryX = cellX;
 				shield.inventoryY = cellY;
 
-				if (show_reward_popup && sword.inInventory && shield.inInventory) {
+				if (show_reward_popup && sword1.inInventory && sword2.inInventory && shield.inInventory) {
 					show_reward_popup = false; // 关闭奖励弹窗
 				}
 			}
@@ -1507,28 +1625,64 @@ void Paint(HWND hWnd)
 					RGB(255, 255, 255)                      // 背景透明色
 				);
 				// 绘制剑
-				SelectObject(hdc_loadBmp, sword.img);
+				SelectObject(hdc_loadBmp, sword1.img);
 				// 假设剑的单个方格对应的图案大小为32x32
-				int swordDrawW = 56.25 * sword.width;
-				int swordDrawH = 56.25 * sword.height;
+				int swordDrawW1 = 56.25 * sword1.width;
+				int swordDrawH1 = 56.25 * sword1.height;
 
 				int drawX, drawY;
-				if (sword.inInventory) {
-					drawX = BACKPACK_START_X + sword.inventoryX * CELL_WIDTH;
-					drawY = BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT;
+				if (sword1.inInventory) {
+					drawX = BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH;
+					drawY = BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT;
 				}
 				else {
-					drawX = sword.screenX;
-					drawY = sword.screenY;
+					drawX = sword1.screenX;
+					drawY = sword1.screenY;
 				}
 
 				TransparentBlt(
 					hdc_memBuffer,
 					drawX, drawY,
-					swordDrawW, swordDrawH,
+					swordDrawW1, swordDrawH1,
 					hdc_loadBmp,
 					0, 0,
-					swordDrawW, swordDrawH,
+					swordDrawW1, swordDrawH1,
+					RGB(255, 255, 255)
+				);
+
+				SelectObject(hdc_loadBmp, bmp_sword);
+				TransparentBlt(
+					hdc_memBuffer,
+					-1000, -1000,    // 背景框在界面上的起始位置
+					SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+				// 绘制剑
+				SelectObject(hdc_loadBmp, sword2.img);
+				// 假设剑的单个方格对应的图案大小为32x32
+				int swordDrawW2 = 56.25 * sword2.width;
+				int swordDrawH2 = 56.25 * sword2.height;
+
+				int drawX0, drawY0;
+				if (sword2.inInventory) {
+					drawX0 = BACKPACK_START_X + sword2.inventoryX * CELL_WIDTH;
+					drawY0 = BACKPACK_START_Y + sword2.inventoryY * CELL_HEIGHT;
+				}
+				else {
+					drawX0 = sword2.screenX;
+					drawY0 = sword2.screenY;
+				}
+
+				TransparentBlt(
+					hdc_memBuffer,
+					drawX0, drawY0,
+					swordDrawW2, swordDrawH2,
+					hdc_loadBmp,
+					0, 0,
+					swordDrawW2, swordDrawH2,
 					RGB(255, 255, 255)
 				);
 
@@ -1568,7 +1722,7 @@ void Paint(HWND hWnd)
 				);
 			}
 
-			else if (sword.inInventory || shield.inInventory || sword.isDragging || shield.isDragging)
+			else if (sword1.inInventory || sword2.inInventory || shield.inInventory || sword1.isDragging || sword2.isDragging || shield.isDragging)
 			{
 				if (isBackpackOpen)
 				{
@@ -1583,19 +1737,19 @@ void Paint(HWND hWnd)
 						RGB(255, 255, 255)                      // 背景透明色
 					);
 					// 绘制剑
-					SelectObject(hdc_loadBmp, sword.img);
+					SelectObject(hdc_loadBmp, sword1.img);
 					// 假设剑的单个方格对应的图案大小为32x32
-					int swordDrawW = 56.25 * sword.width;
-					int swordDrawH = 56.25 * sword.height;
+					int swordDrawW = 56.25 * sword1.width;
+					int swordDrawH = 56.25 * sword1.height;
 
 					int drawX, drawY;
-					if (sword.inInventory) {
-						drawX = BACKPACK_START_X + sword.inventoryX * CELL_WIDTH;
-						drawY = BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT;
+					if (sword1.inInventory) {
+						drawX = BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH;
+						drawY = BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT;
 					}
 					else {
-						drawX = sword.screenX;
-						drawY = sword.screenY;
+						drawX = sword1.screenX;
+						drawY = sword1.screenY;
 					}
 
 					TransparentBlt(
@@ -1605,6 +1759,41 @@ void Paint(HWND hWnd)
 						hdc_loadBmp,
 						0, 0,
 						swordDrawW, swordDrawH,
+						RGB(255, 255, 255)
+					);
+					SelectObject(hdc_loadBmp, bmp_sword);
+					TransparentBlt(
+						hdc_memBuffer,
+						-1000, -1000,    // 背景框在界面上的起始位置
+						SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
+						hdc_loadBmp,
+						0, 0,                                   // 背景框在 BMP 图上的起始位置
+						SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
+						RGB(255, 255, 255)                      // 背景透明色
+					);
+					// 绘制剑
+					SelectObject(hdc_loadBmp, sword2.img);
+					// 假设剑的单个方格对应的图案大小为32x32
+					int swordDrawW1 = 56.25 * sword2.width;
+					int swordDrawH1 = 56.25 * sword2.height;
+
+					int drawX0, drawY0;
+					if (sword2.inInventory) {
+						drawX0 = BACKPACK_START_X + sword2.inventoryX * CELL_WIDTH;
+						drawY0 = BACKPACK_START_Y + sword2.inventoryY * CELL_HEIGHT;
+					}
+					else {
+						drawX0 = sword2.screenX;
+						drawY0 = sword2.screenY;
+					}
+
+					TransparentBlt(
+						hdc_memBuffer,
+						drawX0, drawY0,
+						swordDrawW1, swordDrawH1,
+						hdc_loadBmp,
+						0, 0,
+						swordDrawW1, swordDrawH1,
 						RGB(255, 255, 255)
 					);
 					SelectObject(hdc_loadBmp, bmp_shield);

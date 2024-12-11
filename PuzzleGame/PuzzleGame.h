@@ -267,6 +267,8 @@ struct Item {
 	int offsetX, offsetY; // 鼠标相对于道具左上角的偏移
 	int screenX, screenY; // 道具当前屏幕坐标
 	int startX, startY;  // 拖拽前的屏幕坐标（新添加）
+	int rotation;
+	int shape[4][4];
 	HBITMAP img;         // 道具图像
 };
 
@@ -311,8 +313,6 @@ bool CheckCollision1(int x, int y, int direction, int map[20][28]);
 
 //宝可梦随机运动函数
 void RandomizePokemonMovement(Pokemon* pokemon);
-
-void HandleDrop(HWND hWnd, Item& item, int inventory[4][4], int startX, int startY, int cellWidth, int cellHeight);
 
 #pragma region 其它游戏状态处理函数声明
 
