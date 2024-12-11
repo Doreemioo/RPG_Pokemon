@@ -57,6 +57,32 @@ bool isPaused = false; // 游戏是否处于暂停状态
 bool show_reward_popup = false;
 int inventory[4][4]; // 0表示空，1表示被剑占用（示例）
 
+Item sword = {
+	false, // inInventory
+	0,     // inventoryX
+	0,     // inventoryY
+	1,     // width
+	3,     // height
+	false, // isDragging
+	0, 0,  // offsetX, offsetY
+	300, 200, // screenX, screenY
+	300, 200,
+	bmp_sword  // img
+};
+
+Item shield = {
+	false, // inInventory
+	0,     // inventoryX
+	0,     // inventoryY
+	2,     // width
+	2,     // height
+	false, // isDragging
+	0, 0,  // offsetX, offsetY
+	400, 200, // screenX, screenY
+	400, 200,
+	bmp_shield  // img
+};
+
 //TODO 更多的全局变量
 
 
@@ -235,63 +261,249 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (message)
-    {
-    case WM_CREATE:
-        // 初始化游戏窗体
-        InitGame(hWnd, wParam, lParam);
-        break;
-    case WM_KEYDOWN:
-        // 键盘按下事件
-        KeyDown(hWnd, wParam, lParam);
+	int swordW = 56.25 * sword.width;
+	int swordH = 56.25 * sword.height;
+	int shieldW = 56.25 * shield.width;
+	int shieldH = 56.25 * shield.height;
+
+	int swordScreenX = sword.inInventory ? (BACKPACK_START_X + sword.inventoryX * CELL_WIDTH) : sword.screenX;
+	int swordScreenY = sword.inInventory ? (BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT) : sword.screenY;
+	int shieldScreenX = shield.inInventory ? (BACKPACK_START_X + shield.inventoryX * CELL_WIDTH) : shield.screenX;
+	int shieldScreenY = shield.inInventory ? (BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT) : shield.screenY;
+
+	switch (message)
+	{
+	case WM_CREATE:
+	{
+		// 初始化游戏窗体
+		InitGame(hWnd, wParam, lParam);
+		break;
+	}
+	case WM_KEYDOWN:
+	{
+		// 键盘按下事件
+		KeyDown(hWnd, wParam, lParam);
 		if (wParam == VK_ESCAPE) { // 判断是否按下 ESC 键
 			isPaused = !isPaused; // 切换暂停状态
 			InvalidateRect(hWnd, NULL, TRUE); // 触发重绘
 		}
-        break;
-    case WM_KEYUP:
-        // 键盘松开事件
-        KeyUp(hWnd, wParam, lParam);
-        break;
-    case WM_MOUSEMOVE:
-        // 鼠标移动事件
-        MouseMove(hWnd, wParam, lParam);
-        break;
-    case WM_LBUTTONDOWN:
-        // 鼠标左键按下事件
-        LButtonDown(hWnd, wParam, lParam);
-		x = LOWORD(lParam);
-		y = HIWORD(lParam);
-
-		// 检查点击位置是否在按钮内
-		if (isBackpackOpen && x >= backpackDelete.left && x <= backpackDelete.right &&
-			y >= backpackDelete.top && y <= backpackDelete.bottom) {
-			// 关闭背包
-			isBackpackOpen = false;
-			InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
-		}
-		else if (x >= backpackButton.left && x <= backpackButton.right &&
-			y >= backpackButton.top && y <= backpackButton.bottom) {
-			// 切换背包状态
+		if (wParam == 0x42) { // 假设按 B 键开关背包
 			isBackpackOpen = !isBackpackOpen;
 			InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
 		}
-		else if (isPaused && x >= 390 && x <= 570 && y >= 280 && y <= 365)
-		{
+
+		break;
+	}
+	case WM_KEYUP:
+	{
+		// 键盘松开事件
+		KeyUp(hWnd, wParam, lParam);
+		break;
+	}
+	case WM_MOUSEMOVE:
+	{
+		// 鼠标移动事件
+		MouseMove(hWnd, wParam, lParam);
+
+		if (sword.isDragging) {
+			int mx = LOWORD(lParam);
+			int my = HIWORD(lParam);
+			// 更新剑在屏幕上的位置
+			sword.screenX = mx - sword.offsetX;
+			sword.screenY = my - sword.offsetY;
+			InvalidateRect(hWnd, NULL, FALSE); // 刷新绘图
+		}
+		if (shield.isDragging) {
+			int mx = LOWORD(lParam);
+			int my = HIWORD(lParam);
+			// 更新剑在屏幕上的位置
+			shield.screenX = mx - shield.offsetX;
+			shield.screenY = my - shield.offsetY;
+			InvalidateRect(hWnd, NULL, FALSE); // 刷新绘图
+		}
+		break;
+	}
+	case WM_LBUTTONDOWN:
+	{
+		LButtonDown(hWnd, wParam, lParam);
+		x = LOWORD(lParam);
+		y = HIWORD(lParam);
+
+		swordW = 56.25 * sword.width;
+		swordH = 56.25 * sword.height;
+		shieldW = 56.25 * shield.width;
+		shieldH = 56.25 * shield.height;
+		swordScreenX = sword.inInventory ?
+			(BACKPACK_START_X + sword.inventoryX * CELL_WIDTH) : sword.screenX;
+		swordScreenY = sword.inInventory ?
+			(BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT) : sword.screenY;
+		shieldScreenX = shield.inInventory ?
+			(BACKPACK_START_X + shield.inventoryX * CELL_WIDTH) : shield.screenX;
+		shieldScreenY = shield.inInventory ?
+			(BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT) : shield.screenY;
+
+		// 然后再做点击检测、拖拽逻辑
+		if (x >= swordScreenX && x < swordScreenX + swordW &&
+			y >= swordScreenY && y < swordScreenY + swordH) {
+			// 点中了剑
+			sword.isDragging = true;
+			sword.offsetX = x - swordScreenX;
+			sword.offsetY = y - swordScreenY;
+
+			sword.startX = sword.screenX;
+			sword.startY = sword.screenY;
+
+			if (sword.inInventory) {
+				// 清空背包格子
+				for (int i = 0; i < sword.width; i++) {
+					inventory[sword.inventoryY][sword.inventoryX + i] = 0;
+				}
+				sword.inInventory = false;
+			}
+		}
+		if (x >= shieldScreenX && x < shieldScreenX + shieldW &&
+			y >= shieldScreenY && y < shieldScreenY + shieldH) {
+			// 点中了剑
+			shield.isDragging = true;
+			shield.offsetX = x - shieldScreenX;
+			shield.offsetY = y - shieldScreenY;
+			if (shield.inInventory) {
+				// 清空背包格子
+				for (int i = 0; i < shield.width; i++) {
+					inventory[shield.inventoryY][shield.inventoryX + i] = 0;
+				}
+				shield.inInventory = false;
+			}
+		}
+
+		// 然后处理背包按钮等其他逻辑
+		if (isBackpackOpen && x >= backpackDelete.left && x <= backpackDelete.right &&
+			y >= backpackDelete.top && y <= backpackDelete.bottom) {
+			isBackpackOpen = false;
+			InvalidateRect(hWnd, NULL, FALSE);
+		}
+		else if (x >= backpackButton.left && x <= backpackButton.right &&
+			y >= backpackButton.top && y <= backpackButton.bottom && !isBackpackOpen) {
+			isBackpackOpen = !isBackpackOpen;
+			InvalidateRect(hWnd, NULL, FALSE);
+		}
+		else if (isPaused && x >= 390 && x <= 570 && y >= 280 && y <= 365) {
 			isPaused = !isPaused;
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
-		else if (isPaused && x >= 390 && x <= 570 && y >= 385 && y <= 460)
-		{
+		else if (isPaused && x >= 390 && x <= 570 && y >= 385 && y <= 460) {
 			PostQuitMessage(0);
 		}
-
 		break;
-    case WM_LBUTTONUP:
-        // 鼠标左键松开事件
-        LButtonUp(hWnd, wParam, lParam);
-        break;
+	}
+	case WM_LBUTTONUP:
+	{
+		// 鼠标左键松开事件
+		LButtonUp(hWnd, wParam, lParam);
+		if (sword.isDragging && isBackpackOpen) {
+			sword.isDragging = false;
+
+			int mx = LOWORD(lParam);
+			int my = HIWORD(lParam);
+
+			// 尝试将剑放入背包
+			// 计算鼠标松开时对应的背包格子坐标
+			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
+			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
+
+			// 检查是否能放置剑（需要3个连续横向格子）
+			bool canPlace = false;
+			if (cellX >= 0 && cellY >= 0 && cellX + sword.width - 1 < 4 && cellY < 4) {
+				// 检查这3个格子是否为空
+				bool allEmpty = true;
+				for (int i = 0; i < sword.width; i++) {
+					if (inventory[cellY][cellX + i] != 0) {
+						allEmpty = false;
+						break;
+					}
+				}
+				if (allEmpty) {
+					canPlace = true;
+				}
+			}
+
+			if (canPlace) {
+				// 放置剑
+				for (int i = 0; i < sword.width; i++) {
+					for (int j = 0; j < sword.height; j++)
+					{
+						inventory[cellY + j][cellX + i] = 1;
+					}
+				}
+				sword.inInventory = true;
+				sword.inventoryX = cellX;
+				sword.inventoryY = cellY;
+
+				if (show_reward_popup && sword.inInventory && shield.inInventory) {
+					show_reward_popup = false; // 关闭奖励弹窗
+				}
+			}
+			else {
+				sword.screenX = sword.startX;
+				sword.screenY = sword.startY;
+				sword.inInventory = false; // 确保状态更新正确
+			}
+		}
+
+		if (shield.isDragging && isBackpackOpen) {
+			shield.isDragging = false;
+
+			int mx = LOWORD(lParam);
+			int my = HIWORD(lParam);
+
+			// 尝试将剑放入背包
+			// 计算鼠标松开时对应的背包格子坐标
+			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
+			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
+
+			// 检查是否能放置剑（需要3个连续横向格子）
+			bool canPlace = false;
+			if (cellX >= 0 && cellY >= 0 && cellX + shield.width - 1 < 4 && cellY < 4) {
+				// 检查这3个格子是否为空
+				bool allEmpty = true;
+				for (int i = 0; i < shield.width; i++) {
+					if (inventory[cellY][cellX + i] != 0) {
+						allEmpty = false;
+						break;
+					}
+				}
+				if (allEmpty) {
+					canPlace = true;
+				}
+			}
+
+			if (canPlace) {
+				// 放置剑
+				for (int i = 0; i < shield.width; i++) {
+					for (int j = 0; j < shield.height; j++)
+					{
+						inventory[cellY + j][cellX + i] = 2;
+					}
+				}
+				shield.inInventory = true;
+				shield.inventoryX = cellX;
+				shield.inventoryY = cellY;
+
+				if (show_reward_popup && sword.inInventory && shield.inInventory) {
+					show_reward_popup = false; // 关闭奖励弹窗
+				}
+			}
+			else {
+				shield.screenX = shield.startX;
+				shield.screenY = shield.startY;
+				shield.inInventory = false; // 确保状态更新正确
+			}
+			InvalidateRect(hWnd, NULL, FALSE);
+			}
+			break;
+		}
 	case WM_TIMER:
+	{
 		// 定时器事件
 		if (currentStage != NULL && currentStage->timerOn) {
 			TimerUpdate(hWnd, wParam, lParam);
@@ -299,18 +511,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			UpdatePokemons(hWnd);
 		}
 		break;
-    case WM_PAINT:
-        // 绘图
-        Paint(hWnd);
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
+	}
+	case WM_PAINT:
+	{
+		// 绘图
+		Paint(hWnd);
+		break;
+	}
+	case WM_DESTROY:
+	{
+		PostQuitMessage(0);
+		break;
+	}
+	default:
+	{
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+		return 0;
+	}
 }
+
 
 // 初始化游戏窗体函数
 void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
@@ -1274,32 +1494,202 @@ void Paint(HWND hWnd)
 			rect.bottom = WINDOW_HEIGHT - 50;
 			DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
 		}
-		if (show_reward_popup) {
-			// 绘制奖励图标
-			SelectObject(hdc_loadBmp, bmp_sword);
-			// 如果你的sword图标大小是已知的(如32x32)，就这样画
+		bool swordVisible = false;
+		if (sword.inInventory && shield.inInventory)
+		{
+			if (isBackpackOpen)
+			{
+				SelectObject(hdc_loadBmp, bmp_sword);
+				TransparentBlt(
+					hdc_memBuffer,
+					-1000, -1000,    // 背景框在界面上的起始位置
+					SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+				// 绘制剑
+				SelectObject(hdc_loadBmp, sword.img);
+				// 假设剑的单个方格对应的图案大小为32x32
+				int swordDrawW = 56.25 * sword.width;
+				int swordDrawH = 56.25 * sword.height;
+
+				int drawX, drawY;
+				if (sword.inInventory) {
+					drawX = BACKPACK_START_X + sword.inventoryX * CELL_WIDTH;
+					drawY = BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT;
+				}
+				else {
+					drawX = sword.screenX;
+					drawY = sword.screenY;
+				}
+
+				TransparentBlt(
+					hdc_memBuffer,
+					drawX, drawY,
+					swordDrawW, swordDrawH,
+					hdc_loadBmp,
+					0, 0,
+					swordDrawW, swordDrawH,
+					RGB(255, 255, 255)
+				);
+				SelectObject(hdc_loadBmp, bmp_shield);
+				TransparentBlt(
+					hdc_memBuffer,
+					-1000, -1000,    // 背景框在界面上的起始位置
+					SHIELD_WIDTH, SHIELD_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					SHIELD_WIDTH, SHIELD_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+				SelectObject(hdc_loadBmp, shield.img);
+				// 假设剑的单个方格对应的图案大小为32x32
+				int shieldDrawW = 56.25 * shield.width;
+				int shieldDrawH = 56.25 * shield.height;
+
+				int drawX1, drawY1;
+				if (shield.inInventory) {
+					drawX1 = BACKPACK_START_X + shield.inventoryX * CELL_WIDTH;
+					drawY1 = BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT;
+				}
+				else {
+					drawX1 = shield.screenX;
+					drawY1 = shield.screenY;
+				}
+
+				TransparentBlt(
+					hdc_memBuffer,
+					drawX1, drawY1,
+					shieldDrawW, shieldDrawH,
+					hdc_loadBmp,
+					0, 0,
+					shieldDrawW, shieldDrawH,
+					RGB(255, 255, 255)
+				);
+
+
+			}
+		}
+		if (show_reward_popup)
+		{
 			SelectObject(hdc_loadBmp, bmp_sword);
 			TransparentBlt(
 				hdc_memBuffer,
-				SWORD_START_X, SWORD_START_Y,    // 背景框在界面上的起始位置
+				-1000, -1000,    // 背景框在界面上的起始位置
 				SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
 				hdc_loadBmp,
 				0, 0,                                   // 背景框在 BMP 图上的起始位置
 				SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
 				RGB(255, 255, 255)                      // 背景透明色
 			);
-			SelectObject(hdc_loadBmp, bmp_shield);
-			// 如果你的sword图标大小是已知的(如32x32)，就这样画
+			// 绘制剑
+			SelectObject(hdc_loadBmp, sword.img);
+			// 假设剑的单个方格对应的图案大小为32x32
+			int swordDrawW = 56.25 * sword.width;
+			int swordDrawH = 56.25 * sword.height;
+
+			int drawX, drawY;
+			if (sword.inInventory) {
+				drawX = BACKPACK_START_X + sword.inventoryX * CELL_WIDTH;
+				drawY = BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT;
+			}
+			else {
+				drawX = sword.screenX;
+				drawY = sword.screenY;
+			}
+
+			TransparentBlt(
+				hdc_memBuffer,
+				drawX, drawY,
+				swordDrawW, swordDrawH,
+				hdc_loadBmp,
+				0, 0,
+				swordDrawW, swordDrawH,
+				RGB(255, 255, 255)
+			);
+
 			SelectObject(hdc_loadBmp, bmp_shield);
 			TransparentBlt(
 				hdc_memBuffer,
-				SHIELD_START_X, SHIELD_START_Y,    // 背景框在界面上的起始位置
+				-1000, -1000,    // 背景框在界面上的起始位置
 				SHIELD_WIDTH, SHIELD_HEIGHT,      // 背景框宽高
 				hdc_loadBmp,
 				0, 0,                                   // 背景框在 BMP 图上的起始位置
 				SHIELD_WIDTH, SHIELD_HEIGHT,      // BMP 图中背景框的宽高
 				RGB(255, 255, 255)                      // 背景透明色
 			);
+			SelectObject(hdc_loadBmp, shield.img);
+			// 假设剑的单个方格对应的图案大小为32x32
+			int shieldDrawW = 56.25 * shield.width;
+			int shieldDrawH = 56.25 * shield.height;
+
+			int drawX1, drawY1;
+			if (shield.inInventory) {
+				drawX1 = BACKPACK_START_X + shield.inventoryX * CELL_WIDTH;
+				drawY1 = BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT;
+			}
+			else {
+				drawX1 = shield.screenX;
+				drawY1 = shield.screenY;
+			}
+
+			TransparentBlt(
+				hdc_memBuffer,
+				drawX1, drawY1,
+				shieldDrawW, shieldDrawH,
+				hdc_loadBmp,
+				0, 0,
+				shieldDrawW, shieldDrawH,
+				RGB(255, 255, 255)
+			);
+		}
+
+		if (isBackpackOpen && sword.inInventory) {
+			SelectObject(hdc_loadBmp, sword.img);
+			int swordDrawW = 56.25 * sword.width;
+			int swordDrawH = 56.25 * sword.height;
+			int drawX = BACKPACK_START_X + sword.inventoryX * CELL_WIDTH;
+			int drawY = BACKPACK_START_Y + sword.inventoryY * CELL_HEIGHT;
+
+			TransparentBlt(
+				hdc_memBuffer,
+				drawX, drawY,
+				swordDrawW, swordDrawH,
+				hdc_loadBmp,
+				0, 0,
+				swordDrawW, swordDrawH,
+				RGB(255, 255, 255)
+			);
+		}
+
+		// 绘制盾牌
+		if (isBackpackOpen && shield.inInventory) {
+			SelectObject(hdc_loadBmp, shield.img);
+			int shieldDrawW = 56.25 * shield.width;
+			int shieldDrawH = 56.25 * shield.height;
+			int drawX = BACKPACK_START_X + shield.inventoryX * CELL_WIDTH;
+			int drawY = BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT;
+
+			TransparentBlt(
+				hdc_memBuffer,
+				drawX, drawY,
+				shieldDrawW, shieldDrawH,
+				hdc_loadBmp,
+				0, 0,
+				shieldDrawW, shieldDrawH,
+				RGB(255, 255, 255)
+			);
+		}
+		for (int r = 0; r < 4; r++) {
+			for (int c = 0; c < 4; c++) {
+				// 这里可以绘制格子边框等
+				int gx = BACKPACK_START_X + c * CELL_WIDTH;
+				int gy = BACKPACK_START_Y + r * CELL_HEIGHT;
+				// 可选：绘制格子框
+				// Rectangle(hdc_memBuffer, gx, gy, gx + CELL_WIDTH, gy + CELL_HEIGHT);
+			}
 		}
 		}
 
@@ -1320,6 +1710,7 @@ void Paint(HWND hWnd)
 			);
 		}
 	}
+
 
 	// 最后将所有的信息绘制到屏幕上
 	BitBlt(hdc_window, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_memBuffer, 0, 0, SRCCOPY);

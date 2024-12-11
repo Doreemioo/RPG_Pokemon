@@ -90,6 +90,8 @@ using namespace std;
 #define SHIELD_HEIGHT			112.5
 #define SHIELD_START_X			400
 #define SHIELD_START_Y			200
+#define CELL_WIDTH				56.25
+#define CELL_HEIGHT				56.25
 
 
 //单位状态定义
@@ -255,17 +257,17 @@ struct Monster
 	int next_conversation_id;						//下一次要说第几句台词
 };
 
-//道具结构体
 struct Item {
-	bool inInventory; // 剑是否已经在背包内
-	int inventoryX;   // 剑在背包中的起始格子坐标X（列）
-	int inventoryY;   // 剑在背包中的起始格子坐标Y（行）
-	int width;        // =3
-	int height;       // =1 (此例中为一行三列)
-	bool isDragging;  // 当前是否正在被拖拽
-	int offsetX, offsetY; // 鼠标点击时与剑左上角的偏移，用于平滑拖动
-	int screenX, screenY; // 剑在屏幕上的坐标（当未放入背包时）
-	HBITMAP img;
+	bool inInventory;    // 是否在背包中
+	int inventoryX;      // 背包中的起始格子 X
+	int inventoryY;      // 背包中的起始格子 Y
+	int width;           // 道具宽度
+	int height;          // 道具高度
+	bool isDragging;     // 是否正在拖拽
+	int offsetX, offsetY; // 鼠标相对于道具左上角的偏移
+	int screenX, screenY; // 道具当前屏幕坐标
+	int startX, startY;  // 拖拽前的屏幕坐标（新添加）
+	HBITMAP img;         // 道具图像
 };
 
 
