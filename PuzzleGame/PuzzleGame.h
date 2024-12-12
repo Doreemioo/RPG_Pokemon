@@ -3,13 +3,17 @@
 #pragma region 头文件引用
 
 #include <windows.h>
+#include <algorithm>
 #include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
-#include <time.h>
 #include <vector>
 #include <math.h>
+#include <time.h>
+#include <gdiplus.h>
+using namespace Gdiplus;
+#pragma comment (lib,"Gdiplus.lib")
 #include "resource.h"
 #pragma comment(lib, "Msimg32.lib")			//图象处理的函数接口，例如：透明色的位图的绘制TransparentBlt函数
 using namespace std;
@@ -24,6 +28,7 @@ using namespace std;
 #define STAGE_STARTMENU			0		//开始画面的ID
 #define STAGE_1					1		//第一个游戏场景的ID
 #define STAGE_2					2
+#define STAGE_3					3
 
 //尺寸
 #define BG_BITMAP_WIDTH			960		//背景图片的位图宽度
@@ -36,6 +41,7 @@ using namespace std;
 #define HUMAN_BITMAP_SIZE_Y		26		
 #define BLOCK_SIZE_X			32		//背景单格在屏幕上的宽度
 #define BLOCK_SIZE_Y			32		//背景单格在屏幕上的高度
+#define CELL_SIZE				56.25
 #define BLOCK_BITMAP_SIZE_X		16		//地图块在位图上的宽度
 #define BLOCK_BITMAP_SIZE_Y		16
 #define DIALOG_SIZE_X			896		//对话框背景
@@ -92,6 +98,39 @@ using namespace std;
 #define SHIELD_START_Y			200
 #define CELL_WIDTH				56.25
 #define CELL_HEIGHT				56.25
+#define POKEMON_BALL_WIDTH		56.25
+#define POKEMON_BALL_HEIGHT		56.25
+#define POKEMON_BALL_START_X	500
+#define POKEMON_BALL_START_Y	200
+#define BATTLEMAP_WIDTH			960
+#define BATTLEMAP_HEIGHT		640
+#define BATTLEMAP_START_X		0
+#define BATTLEMAP_START_Y		0
+#define BATTLEPOKEMON_WIDTH		64
+#define BATTLEPOKEMON_HEIGHT	64
+#define BATTLEPOKEMON_START_X	600
+#define BATTLEPOKEMON_START_Y	330
+#define POKEMON_MP_BLOCK_COUNT	2
+#define POKEMON_MP_BLOCK_WIDTH	32
+#define POKEMON_MP_BLOCK_HEIGHT	32
+#define POKEMON_MP_START_X		770
+#define POKEMON_MP_START_Y		100
+#define POKE_BLOOD_BLOCK_COUNT	5
+#define POKE_BLOOD_BLOCK_WIDTH	32
+#define POKE_BLOOD_BLOCK_HEIGHT	32
+#define POKE_BLOOD_START_X		600
+#define POKE_BLOOD_START_Y		100
+#define BATTLE_BACKPACK_START_X	680
+#define BATTLE_BACKPACK_START_Y	150
+#define VICTORY_WIDTH			160
+#define VICTORY_HEIGHT			66
+#define VICTORY_START_X			400
+#define VICTORY_START_Y			250
+#define LOSE_WIDTH				160
+#define LOSE_HEIGHT				66
+#define LOSE_START_X			400
+#define LOSE_START_Y			250
+
 
 
 //单位状态定义
@@ -267,8 +306,6 @@ struct Item {
 	int offsetX, offsetY; // 鼠标相对于道具左上角的偏移
 	int screenX, screenY; // 道具当前屏幕坐标
 	int startX, startY;  // 拖拽前的屏幕坐标（新添加）
-	int rotation;
-	int shape[4][4];
 	HBITMAP img;         // 道具图像
 };
 
@@ -313,6 +350,15 @@ bool CheckCollision1(int x, int y, int direction, int map[20][28]);
 
 //宝可梦随机运动函数
 void RandomizePokemonMovement(Pokemon* pokemon);
+
+//进入战斗
+void GetInBattleMap(HWND hWnd);
+
+HBITMAP GetItemBitmap(int itemID);
+
+void PokemonAttack(HWND hWnd);
+
+void ResetGame(HWND hWnd);
 
 #pragma region 其它游戏状态处理函数声明
 
