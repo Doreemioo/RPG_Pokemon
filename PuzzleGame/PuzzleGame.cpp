@@ -1469,16 +1469,27 @@ void UpdateEvents(HWND hWnd)
 //抬起空格时触发，开启对话
 void HandleConversationEvents(HWND hWnd)
 {
+	for (int i = 0; i < npcs.size(); i++) {
+		NPC* npc = npcs[i];
+		if (isBattled)
+		{
+			npc->task_complete = true;
+		}
+		if (npc->task_complete && npc->next_conversation_id >= npc->conversations_before.size())
+		{
+			npc->next_conversation_id = 0;
+		}
+	}
 	//当前已经开启对话，再按一次空格关闭
 	if (in_conversation) {
 		in_conversation = false;
+		
 		for (int i = 0; i < npcs.size(); i++) {
 			NPC* npc = npcs[i];
 			// 判断当前NPC是否对话已到最后一句
 			// 这里假设 conversations_before 有 3句，当 next_conversation_id 达到3时说明前面3句已说完
-			if (!npc->task_complete && npc->next_conversation_id >= npc->conversations_before.size() - 1) {
+			if (!npc->task_complete && npc->next_conversation_id == npc->conversations_before.size() - 1) {
 				show_reward_popup = true;
-				npc->task_complete = true;
 			}
 		}
 		return;
@@ -1486,37 +1497,32 @@ void HandleConversationEvents(HWND hWnd)
 	//player与npc做碰撞检测，判断与哪个npc对话
 	for (int i = 0; i < npcs.size(); i++) {
 		NPC* npc = npcs[i];
-		if (((player->x <= npc->x + 10 && npc->x <= player->x + HUMAN_SIZE_X + 10) || (npc->x <= player->x + 10 && player->x <= npc->x + HUMAN_SIZE_X + 10)) &&
-			((player->y <= npc->y + 10 && npc->y <= player->y + HUMAN_SIZE_Y + 10) || (npc->y <= player->y + 10 && player->y <= npc->y + HUMAN_SIZE_X + 10))) {
+		if (((player->x <= npc->x + 10 && npc->x <= player->x + HUMAN_SIZE_X + 10) ||
+			(npc->x <= player->x + 10 && player->x <= npc->x + HUMAN_SIZE_X + 10)) &&
+			((player->y <= npc->y + 10 && npc->y <= player->y + HUMAN_SIZE_Y + 10) ||
+				(npc->y <= player->y + 10 && player->y <= npc->y + HUMAN_SIZE_X + 10))) {
+
 			in_conversation = true;
+
 			if (!npc->task_complete) {
-				// 先检查 next_conversation_id 是否在范围内
-				if (npc->next_conversation_id >= npc->conversations_before.size()) {
-					// 超出范围，说明对话已结束，不再读取
-					// 可根据需要直接 break 或设置一个默认内容
-					converstaion_content = L"---------------";
+				if (npc->next_conversation_id < npc->conversations_before.size()) {
+					converstaion_content = npc->conversations_before[npc->next_conversation_id];
+					npc->next_conversation_id++;
 				}
 				else {
-					converstaion_content = npc->conversations_before[npc->next_conversation_id];
+					converstaion_content = L"------------------------------"; // 对话结束
 				}
-
-				// 再决定是否递增 next_conversation_id
-				if (npc->next_conversation_id < npc->conversations_before.size() - 1)
-					npc->next_conversation_id++;
-
 			}
 			else {
-				if (npc->next_conversation_id >= npc->conversations_after.size()) {
-					converstaion_content = L"---------------";
-				}
-				else {
+				if (npc->next_conversation_id < npc->conversations_after.size()) {
 					converstaion_content = npc->conversations_after[npc->next_conversation_id];
-				}
-
-				if (npc->next_conversation_id < npc->conversations_after.size() - 1)
 					npc->next_conversation_id++;
+				}
+				else if (npc->next_conversation_id >= npc->conversations_after.size())
+				{
+					converstaion_content = L"------------------------------"; // 对话结束
+				}
 			}
-
 		}
 	}
 }
@@ -1821,12 +1827,15 @@ NPC* CreateNPC(int x, int y, int npc_id)
 		npc->img = bmp_NPC_MAN1;
 		npc->conversations_before.push_back(L"村长：Ciallo！勇者！欢迎来到宝可梦：背包乱斗！");
 		npc->conversations_before.push_back(L"村长：在这个世界中，宝可梦没有等级，只能通过道具不断变强！");
-		npc->conversations_before.push_back(L"村长：最近下面的房子都被那只喷火龙糟蹋的不成样子了,TA以前明明不是这样的……");
+		npc->conversations_before.push_back(L"村长：最近下面的房子都被那只喷火龙糟蹋的不成样子了,TA以前明明是我们的守护神……");
 		npc->conversations_before.push_back(L"你：啊？可是我还没有宝可梦？这怎么打？！");
 		npc->conversations_before.push_back(L"村长：没关系！送给你这些基础道具，请全部拿走他们，每个道具会占据的空间，打开背包，将他们合理安放");
 		npc->conversations_before.push_back(L"合理运用道具！击败或收服这只宝可梦吧！");
-		npc->conversations_before.push_back(L"");
-		npc->conversations_after.push_back(L"这样啊，原来是有一只猫妖跑到森林里了，谢谢你把它赶走，这下镇子里又可以太平了。");
+		npc->conversations_after.push_back(L"村长：哦谢谢你，我的勇者，你平息了暴乱！");
+		npc->conversations_after.push_back(L"村长：这件炎龙铠甲就上交村里吧，毕竟喷火龙一直都是我们村的守护神");
+		npc->conversations_after.push_back(L"你：？？！这明明是我打败的喷火龙，为什么要上交村里？");
+		npc->conversations_after.push_back(L"村长：哼，看来你敬酒不吃吃罚酒了！来人！");
+		npc->conversations_after.push_back(L"你：？你们要干什么！补药啊！");
 		break;
 	}
 	default:
