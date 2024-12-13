@@ -76,6 +76,9 @@ bool isMyturn = true;
 bool isVictory = false;
 bool isLose = false;
 bool isBattled = false;
+bool isPokemonAcceptance = false;
+const wchar_t** battleDialogs = nullptr; // 动态指向当前的对话数组
+int* dialogIndex = nullptr;             // 动态指向当前对话索引
 
 Item sword1 = {
 	false, // inInventory
@@ -207,6 +210,29 @@ int map[20][28] = { 0 };	//存储当前关卡的地图
 
 
 // TODO: 在此添加其它全局变量
+const wchar_t* battleDialogs1[] = {
+	L"你：喷火龙！我记得你！村民们都把你当守护神，你为什么要伤害他们？之前村民们对你不好吗？吃我一击！…………按“X”键继续",
+	L"喷火龙：你还不是一样！村民们把我当守护神，你却装备着两把剑一面盾攻击我！少废话！我早就看透你们了！看招！…………按“X”键继续",
+	L"你：我只是不忍心看你再堕落下去了，你既然已经对村民出手，那我也无需留情，再见吧！…………按“X”键继续"
+};
+int dialogIndex1 = 0; // 当前显示的对话索引
+
+const wchar_t* battleDialogs2[] = {
+	L"你：喷火龙！我记得你！村民们都把你当守护神，你为什么要伤害他们？之前村民们对你不好吗？吃我一击！…………按“X”键继续",
+	L"喷火龙：我已经没有回头之路了……你也无须再多说什么了，专心战斗就是对我最大的尊重…………按“X”键继续",
+	L"你：你真的要继续堕落下去吗？或许天无绝人之路啊！…………按“X”键继续",
+	L"喷火龙：我这副样子……已经没办法了，村民们不会再认可我了，回不去了…………按“X”键继续",
+	L"你：但是也许我们可以先聊聊？来吧，加入我的队伍！…………按“U”键收服…………按“X”键继续"
+};
+int dialogIndex2 = 0; // 当前显示的对话索引
+
+const wchar_t* battleDialogs3[] = {
+	L"你：喷火龙！我记得你！村民们都把你当守护神，你为什么要伤害他们？之前村民们对你不好吗？吃我一击！…………按“X”键继续",
+	L"喷火龙：竟然如此小瞧我！一把剑都不装备吗？少废话！吃我一击！…………按“X”键继续",
+	L"你：我哪怕死在这里也要与你奋战到底！…………按“X”键继续",
+	L"喷火龙：呵，不自量力，去死吧！…………按“X”键继续"
+};
+int dialogIndex3 = 0; // 当前显示的对话索引
 
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -363,46 +389,105 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			isBackpackOpen = !isBackpackOpen;
 			InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
 		}
+		int swordCount = 0;
+		for (const auto& item : globalBackpack) {
+			if (item.itemID == 1 || item.itemID == 2) {
+				swordCount++;
+			}
+		}
+		switch (swordCount)
+		{
+		case 0:
+			battleDialogs = battleDialogs3;
+			dialogIndex = &dialogIndex3;
+			break;
+		case 1:
+			battleDialogs = battleDialogs2;
+			dialogIndex = &dialogIndex2;
+			break;
+		case 2:
+			battleDialogs = battleDialogs1;
+			dialogIndex = &dialogIndex1;
+			break;
+		default:
+			break;
+		}
+		size_t dialogSize = 0;
+		if (battleDialogs == battleDialogs1) {
+			dialogSize = 3;
+		}
+		else if (battleDialogs == battleDialogs2) {
+			dialogSize = 5;
+		}
+		else if (battleDialogs == battleDialogs3) {
+			dialogSize = 4;
+		}
 		if (wParam == 0x58 && isInbattle) {
-			if (isMyturn && currentmpBlocks > 0 && currentBloodBlocks > 0)
-			{
-				Sleep(2);
-				int swordCount = 1;
-				for (const auto& item : globalBackpack) {
-					if (item.itemID == 1 || item.itemID == 2) {
-						swordCount++;
-					}
-				}
-				currentpokemonBloodBlocks -= swordCount; // 扣血
-				if (currentpokemonBloodBlocks <= 0) {
-					currentpokemonBloodBlocks = 0;// 防止血条块数为负
-					isVictory = true;
-				}
-				currentmpBlocks -= 1; // 扣血
-				if (currentmpBlocks < 0) {
-					currentmpBlocks = 0; // 防止血条块数为负
-				}
-				isMyturn = false;
-				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
-
+			if (*dialogIndex < dialogSize - 1) {
+				(*dialogIndex)++; // 切换到下一个对话
+				InvalidateRect(hWnd, NULL, TRUE); // 触发重绘
 			}
-			else if (!isMyturn && currentpokemonmpBlocks > 0 && currentpokemonBloodBlocks > 0)
-			{
-				PokemonAttack(hWnd);
-				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
-			}
-			else if (isVictory)
+			if (isPokemonAcceptance)
 			{
 				isBattled = true;
 				isInbattle = false;
 				InitStage(hWnd, STAGE_1);
 				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
 			}
-			else if (isLose)
+			else
 			{
-				isInbattle = false;
-				ResetGame(hWnd);
-				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+				if (isMyturn && currentmpBlocks > 0 && currentBloodBlocks > 0)
+				{
+					Sleep(2);
+					currentpokemonBloodBlocks -= (swordCount+1); // 扣血
+					if (currentpokemonBloodBlocks <= 0) {
+						currentpokemonBloodBlocks = 0;// 防止血条块数为负
+						isVictory = true;
+					}
+					currentmpBlocks -= 1; // 扣血
+					if (currentmpBlocks < 0) {
+						currentmpBlocks = 0; // 防止血条块数为负
+					}
+					isMyturn = false;
+					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+
+				}
+				else if (!isMyturn && currentpokemonmpBlocks > 0 && currentpokemonBloodBlocks > 0)
+				{
+					PokemonAttack(hWnd);
+					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+				}
+				else if (isVictory)
+				{
+					isBattled = true;
+					isInbattle = false;
+					InitStage(hWnd, STAGE_1);
+					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+				}
+				else if (isLose)
+				{
+					isInbattle = false;
+					ResetGame(hWnd);
+					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+				}
+			}
+		}
+		if (wParam == 0x55 && isInbattle)
+		{
+			if (isMyturn && currentBloodBlocks > 0 && currentmpBlocks > 0)
+			{
+				Sleep(10);
+				if (currentpokemonBloodBlocks == 1)
+				{
+					isPokemonAcceptance = true;
+					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+				}
+				else
+				{
+					MessageBox(hWnd, L"收服失败！", L"收服状态", MB_OK | MB_ICONINFORMATION);
+					isMyturn = !isMyturn;
+					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+				}
 			}
 		}
 		break;
@@ -612,54 +697,81 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
 			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
 
-			// 检查是否能放置剑（需要3个连续横向格子）
-			bool canPlace = false;
-			if (cellX >= 0 && cellY >= 0 && cellX + sword1.width - 1 < 4 && cellY < 4) {
-				// 检查这3个格子是否为空
-				bool allEmpty = true;
-				for (int i = 0; i < sword1.width; i++) {
-					if (inventory[cellY][cellX + i] != 0) {
-						allEmpty = false;
-						break;
-					}
+			// 检查是否拖到背包区域外
+			bool isOutsideBackpack = (mx < BACKPACK_START_X || mx >= BACKPACK_START_X + BACKPACK_WIDTH ||
+				my < BACKPACK_START_Y || my >= BACKPACK_START_Y + BACKPACK_HEIGHT);
+
+			if (isOutsideBackpack) {
+				// 弹出确认框
+				int result = MessageBox(hWnd, L"是否丢弃该道具？", L"丢弃确认", MB_YESNO | MB_ICONQUESTION);
+				if (result == IDYES) {
+					// 用户选择“是”，从全局背包中删除
+					globalBackpack.erase(
+						std::remove_if(globalBackpack.begin(), globalBackpack.end(),
+							[](const BackpackItem& item) { return item.itemID == 1; }),
+						globalBackpack.end());
+					sword1.inInventory = false; // 确保道具状态更新
+					sword1.screenX = -51;        // 设置为不可见的屏幕坐标
+					sword1.screenY = -51;
 				}
-				if (allEmpty) {
-					canPlace = true;
+				else {
+					// 用户选择“否”，将道具放回原位
+					sword1.screenX = sword1.startX;
+					sword1.screenY = sword1.startY;
+					sword1.inInventory = false; // 不在背包中
 				}
 			}
-
-			if (canPlace) {
-				// 放置剑
-				for (int i = 0; i < sword1.width; i++) {
-					for (int j = 0; j < sword1.height; j++)
-					{
-						inventory[cellY + j][cellX + i] = 1;
+			else
+			{
+				// 检查是否能放置剑（需要3个连续横向格子）
+				bool canPlace = false;
+				if (cellX >= 0 && cellY >= 0 && cellX + sword1.width - 1 < 4 && cellY < 4) {
+					// 检查这3个格子是否为空
+					bool allEmpty = true;
+					for (int i = 0; i < sword1.width; i++) {
+						if (inventory[cellY][cellX + i] != 0) {
+							allEmpty = false;
+							break;
+						}
+					}
+					if (allEmpty) {
+						canPlace = true;
 					}
 				}
-				sword1.inInventory = true;
-				sword1.inventoryX = cellX;
-				sword1.inventoryY = cellY;
+
+				if (canPlace) {
+					// 放置剑
+					for (int i = 0; i < sword1.width; i++) {
+						for (int j = 0; j < sword1.height; j++)
+						{
+							inventory[cellY + j][cellX + i] = 1;
+						}
+					}
+					sword1.inInventory = true;
+					sword1.inventoryX = cellX;
+					sword1.inventoryY = cellY;
 
 
-				// 更新全局背包
-				bool sword1Exists = false;
-				for (auto& backpackSword1 : globalBackpack) {
-					if (backpackSword1.itemID == 1) {
-						backpackSword1.inventoryX = cellX;
-						backpackSword1.inventoryY = cellY;
-						backpackSword1.inInventory = true;
-						sword1Exists = true;
-						break;
+					// 更新全局背包
+					bool sword1Exists = false;
+					for (auto& backpackSword1 : globalBackpack) {
+						if (backpackSword1.itemID == 1) {
+							backpackSword1.inventoryX = cellX;
+							backpackSword1.inventoryY = cellY;
+							backpackSword1.inInventory = true;
+							sword1Exists = true;
+							break;
+						}
+					}
+					if (!sword1Exists) {
+						globalBackpack.push_back({ 1, cellX, cellY, sword1.width, sword2.height, true });
 					}
 				}
-				if (!sword1Exists) {
-					globalBackpack.push_back({ 1, cellX, cellY, sword1.width, sword2.height, true });
+				else {
+					sword1.screenX = sword1.startX;
+					sword1.screenY = sword1.startY;
+					sword1.inInventory = false; // 确保状态更新正确
 				}
-			}
-			else {
-				sword1.screenX = sword1.startX;
-				sword1.screenY = sword1.startY;
-				sword1.inInventory = false; // 确保状态更新正确
 			}
 		}
 
@@ -674,53 +786,80 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
 			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
 
-			// 检查是否能放置剑（需要3个连续横向格子）
-			bool canPlace = false;
-			if (cellX >= 0 && cellY >= 0 && cellX + sword2.width - 1 < 4 && cellY < 4) {
-				// 检查这3个格子是否为空
-				bool allEmpty = true;
-				for (int i = 0; i < sword2.width; i++) {
-					if (inventory[cellY][cellX + i] != 0) {
-						allEmpty = false;
-						break;
-					}
+			// 检查是否拖到背包区域外
+			bool isOutsideBackpack = (mx < BACKPACK_START_X || mx >= BACKPACK_START_X + BACKPACK_WIDTH ||
+				my < BACKPACK_START_Y || my >= BACKPACK_START_Y + BACKPACK_HEIGHT);
+
+			if (isOutsideBackpack) {
+				// 弹出确认框
+				int result = MessageBox(hWnd, L"是否丢弃该道具？", L"丢弃确认", MB_YESNO | MB_ICONQUESTION);
+				if (result == IDYES) {
+					// 用户选择“是”，从全局背包中删除
+					globalBackpack.erase(
+						std::remove_if(globalBackpack.begin(), globalBackpack.end(),
+							[](const BackpackItem& item) { return item.itemID == 2; }),
+						globalBackpack.end());
+					sword2.inInventory = false; // 确保道具状态更新
+					sword2.screenX = -51;        // 设置为不可见的屏幕坐标
+					sword2.screenY = -51;
 				}
-				if (allEmpty) {
-					canPlace = true;
+				else {
+					// 用户选择“否”，将道具放回原位
+					sword2.screenX = sword2.startX;
+					sword2.screenY = sword2.startY;
+					sword2.inInventory = false; // 不在背包中
 				}
 			}
-
-			if (canPlace) {
-				// 放置剑
-				for (int i = 0; i < sword2.width; i++) {
-					for (int j = 0; j < sword2.height; j++)
-					{
-						inventory[cellY + j][cellX + i] = 2;
+			else
+			{
+				// 检查是否能放置剑（需要3个连续横向格子）
+				bool canPlace = false;
+				if (cellX >= 0 && cellY >= 0 && cellX + sword2.width - 1 < 4 && cellY < 4) {
+					// 检查这3个格子是否为空
+					bool allEmpty = true;
+					for (int i = 0; i < sword2.width; i++) {
+						if (inventory[cellY][cellX + i] != 0) {
+							allEmpty = false;
+							break;
+						}
+					}
+					if (allEmpty) {
+						canPlace = true;
 					}
 				}
-				sword2.inInventory = true;
-				sword2.inventoryX = cellX;
-				sword2.inventoryY = cellY;
 
-				// 更新全局背包
-				bool sword2Exists = false;
-				for (auto& backpackSword2 : globalBackpack) {
-					if (backpackSword2.itemID == 2) {
-						backpackSword2.inventoryX = cellX;
-						backpackSword2.inventoryY = cellY;
-						backpackSword2.inInventory = true;
-						sword2Exists = true;
-						break;
+				if (canPlace) {
+					// 放置剑
+					for (int i = 0; i < sword2.width; i++) {
+						for (int j = 0; j < sword2.height; j++)
+						{
+							inventory[cellY + j][cellX + i] = 2;
+						}
+					}
+					sword2.inInventory = true;
+					sword2.inventoryX = cellX;
+					sword2.inventoryY = cellY;
+
+					// 更新全局背包
+					bool sword2Exists = false;
+					for (auto& backpackSword2 : globalBackpack) {
+						if (backpackSword2.itemID == 2) {
+							backpackSword2.inventoryX = cellX;
+							backpackSword2.inventoryY = cellY;
+							backpackSword2.inInventory = true;
+							sword2Exists = true;
+							break;
+						}
+					}
+					if (!sword2Exists) {
+						globalBackpack.push_back({ 2, cellX, cellY, sword2.width, sword2.height, true });
 					}
 				}
-				if (!sword2Exists) {
-					globalBackpack.push_back({ 2, cellX, cellY, sword2.width, sword2.height, true });
+				else {
+					sword2.screenX = sword2.startX;
+					sword2.screenY = sword2.startY;
+					sword2.inInventory = false; // 确保状态更新正确
 				}
-			}
-			else {
-				sword2.screenX = sword2.startX;
-				sword2.screenY = sword2.startY;
-				sword2.inInventory = false; // 确保状态更新正确
 			}
 		}
 
@@ -735,53 +874,80 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
 			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
 
-			// 检查是否能放置剑（需要3个连续横向格子）
-			bool canPlace = false;
-			if (cellX >= 0 && cellY >= 0 && cellX + shield.width - 1 < 4 && cellY < 4) {
-				// 检查这3个格子是否为空
-				bool allEmpty = true;
-				for (int i = 0; i < shield.width; i++) {
-					if (inventory[cellY][cellX + i] != 0) {
-						allEmpty = false;
-						break;
-					}
-				}
-				if (allEmpty) {
-					canPlace = true;
-				}
-			}
-
-			if (canPlace) {
-				// 放置剑
-				for (int i = 0; i < shield.width; i++) {
-					for (int j = 0; j < shield.height; j++)
-					{
-						inventory[cellY + j][cellX + i] = 3;
-					}
-				}
-				shield.inInventory = true;
-				shield.inventoryX = cellX;
-				shield.inventoryY = cellY;
-
-				// 更新全局背包
-				bool shieldExists = false;
-				for (auto& backpackshield : globalBackpack) {
-					if (backpackshield.itemID == 3) {
-						backpackshield.inventoryX = cellX;
-						backpackshield.inventoryY = cellY;
-						backpackshield.inInventory = true;
-						shieldExists = true;
-						break;
-					}
-				}
-				if (!shieldExists) {
-					globalBackpack.push_back({ 3, cellX, cellY, shield.width, shield.height, true });
-
+			// 检查是否拖到背包区域外
+			bool isOutsideBackpack = (mx < BACKPACK_START_X || mx >= BACKPACK_START_X + BACKPACK_WIDTH ||
+				my < BACKPACK_START_Y || my >= BACKPACK_START_Y + BACKPACK_HEIGHT);
+			
+			if (isOutsideBackpack) {
+				// 弹出确认框
+				int result = MessageBox(hWnd, L"是否丢弃该道具？", L"丢弃确认", MB_YESNO | MB_ICONQUESTION);
+				if (result == IDYES) {
+					// 用户选择“是”，从全局背包中删除
+					globalBackpack.erase(
+						std::remove_if(globalBackpack.begin(), globalBackpack.end(),
+							[](const BackpackItem& item) { return item.itemID == 3; }),
+						globalBackpack.end());
+					shield.inInventory = false; // 确保道具状态更新
+					shield.screenX = -51;        // 设置为不可见的屏幕坐标
+					shield.screenY = -51;
 				}
 				else {
+					// 用户选择“否”，将道具放回原位
 					shield.screenX = shield.startX;
 					shield.screenY = shield.startY;
-					shield.inInventory = false; // 确保状态更新正确
+					shield.inInventory = false; // 不在背包中
+				}
+			}
+			else
+			{
+				// 检查是否能放置剑（需要3个连续横向格子）
+				bool canPlace = false;
+				if (cellX >= 0 && cellY >= 0 && cellX + shield.width - 1 < 4 && cellY < 4) {
+					// 检查这3个格子是否为空
+					bool allEmpty = true;
+					for (int i = 0; i < shield.width; i++) {
+						if (inventory[cellY][cellX + i] != 0) {
+							allEmpty = false;
+							break;
+						}
+					}
+					if (allEmpty) {
+						canPlace = true;
+					}
+				}
+
+				if (canPlace) {
+					// 放置剑
+					for (int i = 0; i < shield.width; i++) {
+						for (int j = 0; j < shield.height; j++)
+						{
+							inventory[cellY + j][cellX + i] = 3;
+						}
+					}
+					shield.inInventory = true;
+					shield.inventoryX = cellX;
+					shield.inventoryY = cellY;
+
+					// 更新全局背包
+					bool shieldExists = false;
+					for (auto& backpackshield : globalBackpack) {
+						if (backpackshield.itemID == 3) {
+							backpackshield.inventoryX = cellX;
+							backpackshield.inventoryY = cellY;
+							backpackshield.inInventory = true;
+							shieldExists = true;
+							break;
+						}
+					}
+					if (!shieldExists) {
+						globalBackpack.push_back({ 3, cellX, cellY, shield.width, shield.height, true });
+
+					}
+					else {
+						shield.screenX = shield.startX;
+						shield.screenY = shield.startY;
+						shield.inInventory = false; // 确保状态更新正确
+					}
 				}
 			}
 		}
@@ -797,53 +963,80 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
 			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
 
-			// 检查是否能放置剑（需要3个连续横向格子）
-			bool canPlace = false;
-			if (cellX >= 0 && cellY >= 0 && cellX + pokemon_ball1.width - 1 < 4 && cellY < 4) {
-				// 检查这3个格子是否为空
-				bool allEmpty = true;
-				for (int i = 0; i < pokemon_ball1.width; i++) {
-					if (inventory[cellY][cellX + i] != 0) {
-						allEmpty = false;
-						break;
-					}
+			// 检查是否拖到背包区域外
+			bool isOutsideBackpack = (mx < BACKPACK_START_X || mx >= BACKPACK_START_X + BACKPACK_WIDTH ||
+				my < BACKPACK_START_Y || my >= BACKPACK_START_Y + BACKPACK_HEIGHT);
+
+			if (isOutsideBackpack) {
+				// 弹出确认框
+				int result = MessageBox(hWnd, L"是否丢弃该道具？", L"丢弃确认", MB_YESNO | MB_ICONQUESTION);
+				if (result == IDYES) {
+					// 用户选择“是”，从全局背包中删除
+					globalBackpack.erase(
+						std::remove_if(globalBackpack.begin(), globalBackpack.end(),
+							[](const BackpackItem& item) { return item.itemID == 4; }),
+						globalBackpack.end());
+					pokemon_ball1.inInventory = false; // 确保道具状态更新
+					pokemon_ball1.screenX = -51;        // 设置为不可见的屏幕坐标
+					pokemon_ball1.screenY = -51;
 				}
-				if (allEmpty) {
-					canPlace = true;
+				else {
+					// 用户选择“否”，将道具放回原位
+					pokemon_ball1.screenX = pokemon_ball1.startX;
+					pokemon_ball1.screenY = pokemon_ball1.startY;
+					pokemon_ball1.inInventory = false; // 不在背包中
 				}
 			}
-
-			if (canPlace) {
-				// 放置剑
-				for (int i = 0; i < pokemon_ball1.width; i++) {
-					for (int j = 0; j < pokemon_ball1.height; j++)
-					{
-						inventory[cellY + j][cellX + i] = 4;
+			else
+			{
+				// 检查是否能放置剑（需要3个连续横向格子）
+				bool canPlace = false;
+				if (cellX >= 0 && cellY >= 0 && cellX + pokemon_ball1.width - 1 < 4 && cellY < 4) {
+					// 检查这3个格子是否为空
+					bool allEmpty = true;
+					for (int i = 0; i < pokemon_ball1.width; i++) {
+						if (inventory[cellY][cellX + i] != 0) {
+							allEmpty = false;
+							break;
+						}
+					}
+					if (allEmpty) {
+						canPlace = true;
 					}
 				}
-				pokemon_ball1.inInventory = true;
-				pokemon_ball1.inventoryX = cellX;
-				pokemon_ball1.inventoryY = cellY;
 
-				// 更新全局背包
-				bool pokemonball1Exists = false;
-				for (auto& backpackpokemonball1 : globalBackpack) {
-					if (backpackpokemonball1.itemID == 4) {
-						backpackpokemonball1.inventoryX = cellX;
-						backpackpokemonball1.inventoryY = cellY;
-						backpackpokemonball1.inInventory = true;
-						pokemonball1Exists = true;
-						break;
+				if (canPlace) {
+					// 放置剑
+					for (int i = 0; i < pokemon_ball1.width; i++) {
+						for (int j = 0; j < pokemon_ball1.height; j++)
+						{
+							inventory[cellY + j][cellX + i] = 4;
+						}
+					}
+					pokemon_ball1.inInventory = true;
+					pokemon_ball1.inventoryX = cellX;
+					pokemon_ball1.inventoryY = cellY;
+
+					// 更新全局背包
+					bool pokemonball1Exists = false;
+					for (auto& backpackpokemonball1 : globalBackpack) {
+						if (backpackpokemonball1.itemID == 4) {
+							backpackpokemonball1.inventoryX = cellX;
+							backpackpokemonball1.inventoryY = cellY;
+							backpackpokemonball1.inInventory = true;
+							pokemonball1Exists = true;
+							break;
+						}
+					}
+					if (!pokemonball1Exists) {
+						globalBackpack.push_back({ 4, cellX, cellY, pokemon_ball1.width, pokemon_ball1.height, true });
 					}
 				}
-				if (!pokemonball1Exists) {
-					globalBackpack.push_back({ 4, cellX, cellY, pokemon_ball1.width, pokemon_ball1.height, true });
+				else {
+					pokemon_ball1.screenX = pokemon_ball1.startX;
+					pokemon_ball1.screenY = pokemon_ball1.startY;
+					pokemon_ball1.inInventory = false; // 确保状态更新正确
 				}
-			}
-			else {
-				pokemon_ball1.screenX = pokemon_ball1.startX;
-				pokemon_ball1.screenY = pokemon_ball1.startY;
-				pokemon_ball1.inInventory = false; // 确保状态更新正确
 			}
 		}
 
@@ -858,54 +1051,81 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
 			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
 
-			// 检查是否能放置剑（需要3个连续横向格子）
-			bool canPlace = false;
-			if (cellX >= 0 && cellY >= 0 && cellX + pokemon_ball2.width - 1 < 4 && cellY < 4) {
-				// 检查这3个格子是否为空
-				bool allEmpty = true;
-				for (int i = 0; i < pokemon_ball2.width; i++) {
-					if (inventory[cellY][cellX + i] != 0) {
-						allEmpty = false;
-						break;
-					}
+			// 检查是否拖到背包区域外
+			bool isOutsideBackpack = (mx < BACKPACK_START_X || mx >= BACKPACK_START_X + BACKPACK_WIDTH ||
+				my < BACKPACK_START_Y || my >= BACKPACK_START_Y + BACKPACK_HEIGHT);
+
+			if (isOutsideBackpack) {
+				// 弹出确认框
+				int result = MessageBox(hWnd, L"是否丢弃该道具？", L"丢弃确认", MB_YESNO | MB_ICONQUESTION);
+				if (result == IDYES) {
+					// 用户选择“是”，从全局背包中删除
+					globalBackpack.erase(
+						std::remove_if(globalBackpack.begin(), globalBackpack.end(),
+							[](const BackpackItem& item) { return item.itemID == 5; }),
+						globalBackpack.end());
+					pokemon_ball2.inInventory = false; // 确保道具状态更新
+					pokemon_ball2.screenX = -51;        // 设置为不可见的屏幕坐标
+					pokemon_ball2.screenY = -51;
 				}
-				if (allEmpty) {
-					canPlace = true;
+				else {
+					// 用户选择“否”，将道具放回原位
+					pokemon_ball2.screenX = pokemon_ball2.startX;
+					pokemon_ball2.screenY = pokemon_ball2.startY;
+					pokemon_ball2.inInventory = false; // 不在背包中
 				}
 			}
-
-			if (canPlace) {
-				// 放置剑
-				for (int i = 0; i < pokemon_ball2.width; i++) {
-					for (int j = 0; j < pokemon_ball2.height; j++)
-					{
-						inventory[cellY + j][cellX + i] = 2;
+			else
+			{
+				// 检查是否能放置剑（需要3个连续横向格子）
+				bool canPlace = false;
+				if (cellX >= 0 && cellY >= 0 && cellX + pokemon_ball2.width - 1 < 4 && cellY < 4) {
+					// 检查这3个格子是否为空
+					bool allEmpty = true;
+					for (int i = 0; i < pokemon_ball2.width; i++) {
+						if (inventory[cellY][cellX + i] != 0) {
+							allEmpty = false;
+							break;
+						}
 					}
-				}
-				pokemon_ball2.inInventory = true;
-				pokemon_ball2.inventoryX = cellX;
-				pokemon_ball2.inventoryY = cellY;
-
-				// 更新全局背包
-				bool pokemonball2Exists = false;
-				for (auto& backpackpokemonball2 : globalBackpack) {
-					if (backpackpokemonball2.itemID == 5) {
-						backpackpokemonball2.inventoryX = cellX;
-						backpackpokemonball2.inventoryY = cellY;
-						backpackpokemonball2.inInventory = true;
-						pokemonball2Exists = true;
-						break;
+					if (allEmpty) {
+						canPlace = true;
 					}
 				}
 
-				if (!pokemonball2Exists) {
-					globalBackpack.push_back({ 5, cellX, cellY, pokemon_ball2.width, pokemon_ball2.height, true });
+				if (canPlace) {
+					// 放置剑
+					for (int i = 0; i < pokemon_ball2.width; i++) {
+						for (int j = 0; j < pokemon_ball2.height; j++)
+						{
+							inventory[cellY + j][cellX + i] = 2;
+						}
+					}
+					pokemon_ball2.inInventory = true;
+					pokemon_ball2.inventoryX = cellX;
+					pokemon_ball2.inventoryY = cellY;
+
+					// 更新全局背包
+					bool pokemonball2Exists = false;
+					for (auto& backpackpokemonball2 : globalBackpack) {
+						if (backpackpokemonball2.itemID == 5) {
+							backpackpokemonball2.inventoryX = cellX;
+							backpackpokemonball2.inventoryY = cellY;
+							backpackpokemonball2.inInventory = true;
+							pokemonball2Exists = true;
+							break;
+						}
+					}
+
+					if (!pokemonball2Exists) {
+						globalBackpack.push_back({ 5, cellX, cellY, pokemon_ball2.width, pokemon_ball2.height, true });
+					}
 				}
-			}
-			else {
-				pokemon_ball2.screenX = pokemon_ball2.startX;
-				pokemon_ball2.screenY = pokemon_ball2.startY;
-				pokemon_ball2.inInventory = false; // 确保状态更新正确
+				else {
+					pokemon_ball2.screenX = pokemon_ball2.startX;
+					pokemon_ball2.screenY = pokemon_ball2.startY;
+					pokemon_ball2.inInventory = false; // 确保状态更新正确
+				}
 			}
 			if (show_reward_popup) {
 				if (sword1.inInventory && sword2.inInventory && shield.inInventory && pokemon_ball1.inInventory && pokemon_ball2.inInventory)
@@ -949,7 +1169,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 	}
 }
-
 
 // 初始化游戏窗体函数
 void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
@@ -1331,32 +1550,36 @@ void CheckCollision() {
 			}
 		}
 	}
-	for (int i = 0; i < pokemons.size(); i++) {
-		Pokemon* pokemon = pokemons[i];
+	if (!isBattled)
+	{
+		for (int i = 0; i < pokemons.size(); i++) {
+			Pokemon* pokemon = pokemons[i];
 
-		// 判断玩家和 NPC 是否重叠
-		bool poke_horizontalOverlap = (player->x < pokemon->x + HUMAN_SIZE_X) && (player->x + HUMAN_SIZE_X > pokemon->x);
-		bool poke_verticalOverlap = (player->y < pokemon->y + HUMAN_SIZE_Y - 10) && (player->y + HUMAN_SIZE_Y > pokemon->y);
+			// 判断玩家和 NPC 是否重叠
+			bool poke_horizontalOverlap = (player->x < pokemon->x + HUMAN_SIZE_X) && (player->x + HUMAN_SIZE_X > pokemon->x);
+			bool poke_verticalOverlap = (player->y < pokemon->y + HUMAN_SIZE_Y - 10) && (player->y + HUMAN_SIZE_Y > pokemon->y);
 
-		// 如果发生重叠，根据玩家的移动方向修正位置
-		if (poke_horizontalOverlap && poke_verticalOverlap) {
-			switch (player->direction) {
-			case UNIT_DIRECT_LEFT:
-				player->x = pokemon->x + HUMAN_SIZE_X + 1; // 偏移 1 像素，避免再次触发碰撞
-				break;
-			case UNIT_DIRECT_UP:
-				player->y = pokemon->y + HUMAN_SIZE_Y - 7; // 偏移 1 像素
-				break;
-			case UNIT_DIRECT_RIGHT:
-				player->x = pokemon->x - HUMAN_SIZE_X - 1; // 偏移 1 像素
-				break;
-			case UNIT_DIRECT_DOWN:
-				player->y = pokemon->y - HUMAN_SIZE_Y - 1; // 偏移 1 像素
-				break;
-			default:
-				break;
+			// 如果发生重叠，根据玩家的移动方向修正位置
+			if (poke_horizontalOverlap && poke_verticalOverlap) {
+				switch (player->direction) {
+				case UNIT_DIRECT_LEFT:
+					player->x = pokemon->x + HUMAN_SIZE_X + 1; // 偏移 1 像素，避免再次触发碰撞
+					break;
+				case UNIT_DIRECT_UP:
+					player->y = pokemon->y + HUMAN_SIZE_Y - 7; // 偏移 1 像素
+					break;
+				case UNIT_DIRECT_RIGHT:
+					player->x = pokemon->x - HUMAN_SIZE_X - 1; // 偏移 1 像素
+					break;
+				case UNIT_DIRECT_DOWN:
+					player->y = pokemon->y - HUMAN_SIZE_Y - 1; // 偏移 1 像素
+					break;
+				default:
+					break;
+				}
 			}
 		}
+
 	}
 }
 
@@ -1511,6 +1734,28 @@ void ResetGame(HWND hWnd) {
 	InitStage(hWnd, STAGE_STARTMENU); // 初始化第一个关卡
 }
 
+void DrawBattleDialog(HDC hdc) {
+	// 获取当前对话内容
+	const wchar_t* currentDialog = battleDialogs[*dialogIndex];
+
+	// 创建字体
+	HFONT hFont = CreateFontW(
+		25, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+		L"Microsoft YaHei");
+	SelectObject(hdc, hFont);
+	SetTextColor(hdc, RGB(0, 0, 0)); // 黑色字体
+	SetBkColor(hdc, RGB(255, 255, 255)); // 白色背景
+
+	// 绘制对话框内容
+	RECT rect;
+	rect.left = 130;
+	rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
+	rect.right = WINDOW_WIDTH - 110;
+	rect.bottom = WINDOW_HEIGHT - 50;
+
+	DrawTextW(hdc, currentDialog, -1, &rect, DT_WORDBREAK);
+}
 
 //TODO: 添加游戏需要的更多函数
 
@@ -1574,11 +1819,12 @@ NPC* CreateNPC(int x, int y, int npc_id)
 	{
 	case NPC_MAN1_ID: {
 		npc->img = bmp_NPC_MAN1;
-		npc->conversations_before.push_back(L"勇者！欢迎来到宝可梦：背包乱斗！");
-		npc->conversations_before.push_back(L"在这个世界中，宝可梦没有等级，只能通过道具不断变强！");
-		npc->conversations_before.push_back(L"最近下面的房子都被那只喷火龙糟蹋的不成样子了");
-		npc->conversations_before.push_back(L"送给你这些基础道具，每个道具会占据的空间，打开背包，将他们合理安放");
-		npc->conversations_before.push_back(L"哦对了，别忘了空间管理哦:-)");
+		npc->conversations_before.push_back(L"村长：Ciallo！勇者！欢迎来到宝可梦：背包乱斗！");
+		npc->conversations_before.push_back(L"村长：在这个世界中，宝可梦没有等级，只能通过道具不断变强！");
+		npc->conversations_before.push_back(L"村长：最近下面的房子都被那只喷火龙糟蹋的不成样子了,TA以前明明不是这样的……");
+		npc->conversations_before.push_back(L"你：啊？可是我还没有宝可梦？这怎么打？！");
+		npc->conversations_before.push_back(L"村长：没关系！送给你这些基础道具，请全部拿走他们，每个道具会占据的空间，打开背包，将他们合理安放");
+		npc->conversations_before.push_back(L"合理运用道具！击败或收服这只宝可梦吧！");
 		npc->conversations_before.push_back(L"");
 		npc->conversations_after.push_back(L"这样啊，原来是有一只猫妖跑到森林里了，谢谢你把它赶走，这下镇子里又可以太平了。");
 		break;
@@ -1874,22 +2120,24 @@ void Paint(HWND hWnd)
 					);
 				}
 			}
-			//绘制宝可梦
-			for (int i = 0; i < pokemons.size(); i++) {
-				if (pokemons[i]->visible) {
-					SelectObject(hdc_loadBmp, pokemons[i]->img);
-					TransparentBlt(
-						hdc_memBuffer,
-						pokemons[i]->x - 0.5 * POKEMON_SIZE_X, pokemons[i]->y - 0.5 * POKEMON_SIZE_Y,		// 界面上起始绘制点
-						POKEMON_SIZE_X, POKEMON_SIZE_Y,											// 界面上绘制宽度高度
-						hdc_loadBmp,
-						POKEMON_BITMAP_SIZE_X * pokemons[i]->frame_column, POKEMON_BITMAP_SIZE_Y * pokemons[i]->frame_row,	// 位图上起始绘制点
-						POKEMON_BITMAP_SIZE_X, POKEMON_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
-						RGB(255, 255, 255)
-					);
+			if (!isVictory)
+			{
+				//绘制宝可梦
+				for (int i = 0; i < pokemons.size(); i++) {
+					if (pokemons[i]->visible) {
+						SelectObject(hdc_loadBmp, pokemons[i]->img);
+						TransparentBlt(
+							hdc_memBuffer,
+							pokemons[i]->x - 0.5 * POKEMON_SIZE_X, pokemons[i]->y - 0.5 * POKEMON_SIZE_Y,		// 界面上起始绘制点
+							POKEMON_SIZE_X, POKEMON_SIZE_Y,											// 界面上绘制宽度高度
+							hdc_loadBmp,
+							POKEMON_BITMAP_SIZE_X * pokemons[i]->frame_column, POKEMON_BITMAP_SIZE_Y * pokemons[i]->frame_row,	// 位图上起始绘制点
+							POKEMON_BITMAP_SIZE_X, POKEMON_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+							RGB(255, 255, 255)
+						);
+					}
 				}
 			}
-
 			//绘制血条蓝条背景框
 			SelectObject(hdc_loadBmp, bmp_hp_mp_box);
 			TransparentBlt(
@@ -1999,190 +2247,7 @@ void Paint(HWND hWnd)
 			bool swordVisible = false;
 			if (show_reward_popup)
 			{
-				SelectObject(hdc_loadBmp, bmp_sword);
-				TransparentBlt(
-					hdc_memBuffer,
-					-1000, -1000,    // 背景框在界面上的起始位置
-					SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
-					hdc_loadBmp,
-					0, 0,                                   // 背景框在 BMP 图上的起始位置
-					SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
-					RGB(255, 255, 255)                      // 背景透明色
-				);
-				// 绘制剑
-				SelectObject(hdc_loadBmp, sword1.img);
-				// 假设剑的单个方格对应的图案大小为32x32
-				int swordDrawW1 = 56.25 * sword1.width;
-				int swordDrawH1 = 56.25 * sword1.height;
-
-				int drawX, drawY;
-				if (sword1.inInventory) {
-					drawX = BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH;
-					drawY = BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT;
-				}
-				else {
-					drawX = sword1.screenX;
-					drawY = sword1.screenY;
-				}
-
-				TransparentBlt(
-					hdc_memBuffer,
-					drawX, drawY,
-					swordDrawW1, swordDrawH1,
-					hdc_loadBmp,
-					0, 0,
-					swordDrawW1, swordDrawH1,
-					RGB(255, 255, 255)
-				);
-
-				SelectObject(hdc_loadBmp, bmp_sword);
-				TransparentBlt(
-					hdc_memBuffer,
-					-1000, -1000,    // 背景框在界面上的起始位置
-					SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
-					hdc_loadBmp,
-					0, 0,                                   // 背景框在 BMP 图上的起始位置
-					SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
-					RGB(255, 255, 255)                      // 背景透明色
-				);
-				// 绘制剑
-				SelectObject(hdc_loadBmp, sword2.img);
-				// 假设剑的单个方格对应的图案大小为32x32
-				int swordDrawW2 = 56.25 * sword2.width;
-				int swordDrawH2 = 56.25 * sword2.height;
-
-				int drawX0, drawY0;
-				if (sword2.inInventory) {
-					drawX0 = BACKPACK_START_X + sword2.inventoryX * CELL_WIDTH;
-					drawY0 = BACKPACK_START_Y + sword2.inventoryY * CELL_HEIGHT;
-				}
-				else {
-					drawX0 = sword2.screenX;
-					drawY0 = sword2.screenY;
-				}
-
-				TransparentBlt(
-					hdc_memBuffer,
-					drawX0, drawY0,
-					swordDrawW2, swordDrawH2,
-					hdc_loadBmp,
-					0, 0,
-					swordDrawW2, swordDrawH2,
-					RGB(255, 255, 255)
-				);
-
-				SelectObject(hdc_loadBmp, bmp_shield);
-				TransparentBlt(
-					hdc_memBuffer,
-					-1000, -1000,    // 背景框在界面上的起始位置
-					SHIELD_WIDTH, SHIELD_HEIGHT,      // 背景框宽高
-					hdc_loadBmp,
-					0, 0,                                   // 背景框在 BMP 图上的起始位置
-					SHIELD_WIDTH, SHIELD_HEIGHT,      // BMP 图中背景框的宽高
-					RGB(255, 255, 255)                      // 背景透明色
-				);
-				SelectObject(hdc_loadBmp, shield.img);
-				// 假设剑的单个方格对应的图案大小为32x32
-				int shieldDrawW = 56.25 * shield.width;
-				int shieldDrawH = 56.25 * shield.height;
-
-				int drawX1, drawY1;
-				if (shield.inInventory) {
-					drawX1 = BACKPACK_START_X + shield.inventoryX * CELL_WIDTH;
-					drawY1 = BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT;
-				}
-				else {
-					drawX1 = shield.screenX;
-					drawY1 = shield.screenY;
-				}
-
-				TransparentBlt(
-					hdc_memBuffer,
-					drawX1, drawY1,
-					shieldDrawW, shieldDrawH,
-					hdc_loadBmp,
-					0, 0,
-					shieldDrawW, shieldDrawH,
-					RGB(255, 255, 255)
-				);
-
-				SelectObject(hdc_loadBmp, bmp_pokemon_ball);
-				TransparentBlt(
-					hdc_memBuffer,
-					-1000, -1000,    // 背景框在界面上的起始位置
-					POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // 背景框宽高
-					hdc_loadBmp,
-					0, 0,                                   // 背景框在 BMP 图上的起始位置
-					POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // BMP 图中背景框的宽高
-					RGB(255, 255, 255)                      // 背景透明色
-				);
-
-				SelectObject(hdc_loadBmp, pokemon_ball2.img);
-				// 假设剑的单个方格对应的图案大小为32x32
-				int pokemonDrawW2 = 56.25 * pokemon_ball2.width;
-				int pokemonDrawH2 = 56.25 * pokemon_ball2.height;
-
-				int drawX3, drawY3;
-				if (pokemon_ball2.inInventory) {
-					drawX3 = BACKPACK_START_X + pokemon_ball2.inventoryX * CELL_WIDTH;
-					drawY3 = BACKPACK_START_Y + pokemon_ball2.inventoryY * CELL_HEIGHT;
-				}
-				else {
-					drawX3 = pokemon_ball2.screenX;
-					drawY3 = pokemon_ball2.screenY;
-				}
-
-				TransparentBlt(
-					hdc_memBuffer,
-					drawX3, drawY3,
-					pokemonDrawW2, pokemonDrawH2,
-					hdc_loadBmp,
-					0, 0,
-					pokemonDrawW2, pokemonDrawH2,
-					RGB(255, 255, 255)
-				);
-
-				SelectObject(hdc_loadBmp, bmp_pokemon_ball);
-				TransparentBlt(
-					hdc_memBuffer,
-					-1000, -1000,    // 背景框在界面上的起始位置
-					POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // 背景框宽高
-					hdc_loadBmp,
-					0, 0,                                   // 背景框在 BMP 图上的起始位置
-					POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // BMP 图中背景框的宽高
-					RGB(255, 255, 255)                      // 背景透明色
-				);
-
-				SelectObject(hdc_loadBmp, pokemon_ball1.img);
-				// 假设剑的单个方格对应的图案大小为32x32
-				int pokemonDrawW1 = 56.25 * pokemon_ball1.width;
-				int pokemonDrawH1 = 56.25 * pokemon_ball1.height;
-
-				int drawX2, drawY2;
-				if (pokemon_ball1.inInventory) {
-					drawX2 = BACKPACK_START_X + pokemon_ball1.inventoryX * CELL_WIDTH;
-					drawY2 = BACKPACK_START_Y + pokemon_ball1.inventoryY * CELL_HEIGHT;
-				}
-				else {
-					drawX2 = pokemon_ball1.screenX;
-					drawY2 = pokemon_ball1.screenY;
-				}
-
-				TransparentBlt(
-					hdc_memBuffer,
-					drawX2, drawY2,
-					pokemonDrawW1, pokemonDrawH1,
-					hdc_loadBmp,
-					0, 0,
-					pokemonDrawW1, pokemonDrawH1,
-					RGB(255, 255, 255)
-				);
-
-			}
-
-			else if (sword1.inInventory || sword2.inInventory || shield.inInventory || sword1.isDragging || sword2.isDragging || shield.isDragging)
-			{
-				if (isBackpackOpen)
+				if (sword1.screenX >= -50 && sword1.screenY >= -50)
 				{
 					SelectObject(hdc_loadBmp, bmp_sword);
 					TransparentBlt(
@@ -2197,8 +2262,8 @@ void Paint(HWND hWnd)
 					// 绘制剑
 					SelectObject(hdc_loadBmp, sword1.img);
 					// 假设剑的单个方格对应的图案大小为32x32
-					int swordDrawW = 56.25 * sword1.width;
-					int swordDrawH = 56.25 * sword1.height;
+					int swordDrawW1 = 56.25 * sword1.width;
+					int swordDrawH1 = 56.25 * sword1.height;
 
 					int drawX, drawY;
 					if (sword1.inInventory) {
@@ -2213,12 +2278,16 @@ void Paint(HWND hWnd)
 					TransparentBlt(
 						hdc_memBuffer,
 						drawX, drawY,
-						swordDrawW, swordDrawH,
+						swordDrawW1, swordDrawH1,
 						hdc_loadBmp,
 						0, 0,
-						swordDrawW, swordDrawH,
+						swordDrawW1, swordDrawH1,
 						RGB(255, 255, 255)
 					);
+
+				}
+				if (sword2.screenX >= -50 && sword2.screenY >= -50)
+				{
 					SelectObject(hdc_loadBmp, bmp_sword);
 					TransparentBlt(
 						hdc_memBuffer,
@@ -2232,8 +2301,8 @@ void Paint(HWND hWnd)
 					// 绘制剑
 					SelectObject(hdc_loadBmp, sword2.img);
 					// 假设剑的单个方格对应的图案大小为32x32
-					int swordDrawW1 = 56.25 * sword2.width;
-					int swordDrawH1 = 56.25 * sword2.height;
+					int swordDrawW2 = 56.25 * sword2.width;
+					int swordDrawH2 = 56.25 * sword2.height;
 
 					int drawX0, drawY0;
 					if (sword2.inInventory) {
@@ -2248,12 +2317,15 @@ void Paint(HWND hWnd)
 					TransparentBlt(
 						hdc_memBuffer,
 						drawX0, drawY0,
-						swordDrawW1, swordDrawH1,
+						swordDrawW2, swordDrawH2,
 						hdc_loadBmp,
 						0, 0,
-						swordDrawW1, swordDrawH1,
+						swordDrawW2, swordDrawH2,
 						RGB(255, 255, 255)
 					);
+				}
+				if (shield.screenX >= -50 && shield.screenY >= -50)
+				{
 					SelectObject(hdc_loadBmp, bmp_shield);
 					TransparentBlt(
 						hdc_memBuffer,
@@ -2288,6 +2360,9 @@ void Paint(HWND hWnd)
 						shieldDrawW, shieldDrawH,
 						RGB(255, 255, 255)
 					);
+				}
+				if (pokemon_ball1.screenX >= -50 && pokemon_ball1.screenY >= -50)
+				{
 					SelectObject(hdc_loadBmp, bmp_pokemon_ball);
 					TransparentBlt(
 						hdc_memBuffer,
@@ -2298,44 +2373,11 @@ void Paint(HWND hWnd)
 						POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // BMP 图中背景框的宽高
 						RGB(255, 255, 255)                      // 背景透明色
 					);
-					SelectObject(hdc_loadBmp, pokemon_ball1.img);
-					// 假设剑的单个方格对应的图案大小为32x32
-					int pokemonballDrawW1 = 56.25 * pokemon_ball1.width;
-					int poekmonballDrawH1 = 56.25 * pokemon_ball1.height;
 
-					int drawX2, drawY2;
-					if (pokemon_ball1.inInventory) {
-						drawX2 = BACKPACK_START_X + pokemon_ball1.inventoryX * CELL_WIDTH;
-						drawY2 = BACKPACK_START_Y + pokemon_ball1.inventoryY * CELL_HEIGHT;
-					}
-					else {
-						drawX2 = pokemon_ball1.screenX;
-						drawY2 = pokemon_ball1.screenY;
-					}
-
-					TransparentBlt(
-						hdc_memBuffer,
-						drawX2, drawY2,
-						pokemonballDrawW1, poekmonballDrawH1,
-						hdc_loadBmp,
-						0, 0,
-						pokemonballDrawW1, poekmonballDrawH1,
-						RGB(255, 255, 255)
-					);
-					SelectObject(hdc_loadBmp, bmp_pokemon_ball);
-					TransparentBlt(
-						hdc_memBuffer,
-						-1000, -1000,    // 背景框在界面上的起始位置
-						POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // 背景框宽高
-						hdc_loadBmp,
-						0, 0,                                   // 背景框在 BMP 图上的起始位置
-						POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // BMP 图中背景框的宽高
-						RGB(255, 255, 255)                      // 背景透明色
-					);
 					SelectObject(hdc_loadBmp, pokemon_ball2.img);
 					// 假设剑的单个方格对应的图案大小为32x32
-					int pokemonballDrawW2 = 56.25 * pokemon_ball2.width;
-					int poekmonballDrawH2 = 56.25 * pokemon_ball2.height;
+					int pokemonDrawW2 = 56.25 * pokemon_ball2.width;
+					int pokemonDrawH2 = 56.25 * pokemon_ball2.height;
 
 					int drawX3, drawY3;
 					if (pokemon_ball2.inInventory) {
@@ -2350,15 +2392,247 @@ void Paint(HWND hWnd)
 					TransparentBlt(
 						hdc_memBuffer,
 						drawX3, drawY3,
-						pokemonballDrawW2, poekmonballDrawH2,
+						pokemonDrawW2, pokemonDrawH2,
 						hdc_loadBmp,
 						0, 0,
-						pokemonballDrawW2, poekmonballDrawH2,
+						pokemonDrawW2, pokemonDrawH2,
 						RGB(255, 255, 255)
 					);
 
+				}
+				if (pokemon_ball2.screenX >= -50 && pokemon_ball2.screenY >= -50)
+				{
+					SelectObject(hdc_loadBmp, bmp_pokemon_ball);
+					TransparentBlt(
+						hdc_memBuffer,
+						-1000, -1000,    // 背景框在界面上的起始位置
+						POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // 背景框宽高
+						hdc_loadBmp,
+						0, 0,                                   // 背景框在 BMP 图上的起始位置
+						POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // BMP 图中背景框的宽高
+						RGB(255, 255, 255)                      // 背景透明色
+					);
 
+					SelectObject(hdc_loadBmp, pokemon_ball1.img);
+					// 假设剑的单个方格对应的图案大小为32x32
+					int pokemonDrawW1 = 56.25 * pokemon_ball1.width;
+					int pokemonDrawH1 = 56.25 * pokemon_ball1.height;
 
+					int drawX2, drawY2;
+					if (pokemon_ball1.inInventory) {
+						drawX2 = BACKPACK_START_X + pokemon_ball1.inventoryX * CELL_WIDTH;
+						drawY2 = BACKPACK_START_Y + pokemon_ball1.inventoryY * CELL_HEIGHT;
+					}
+					else {
+						drawX2 = pokemon_ball1.screenX;
+						drawY2 = pokemon_ball1.screenY;
+					}
+
+					TransparentBlt(
+						hdc_memBuffer,
+						drawX2, drawY2,
+						pokemonDrawW1, pokemonDrawH1,
+						hdc_loadBmp,
+						0, 0,
+						pokemonDrawW1, pokemonDrawH1,
+						RGB(255, 255, 255)
+					);
+
+				}
+			}
+
+			else if (sword1.inInventory || sword2.inInventory || shield.inInventory || sword1.isDragging || sword2.isDragging || shield.isDragging)
+			{
+				if (isBackpackOpen)
+				{
+					if (sword1.screenX >= -50 && sword1.screenY >= -50)
+					{
+						SelectObject(hdc_loadBmp, bmp_sword);
+						TransparentBlt(
+							hdc_memBuffer,
+							-1000, -1000,    // 背景框在界面上的起始位置
+							SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
+							hdc_loadBmp,
+							0, 0,                                   // 背景框在 BMP 图上的起始位置
+							SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
+							RGB(255, 255, 255)                      // 背景透明色
+						);
+						// 绘制剑
+						SelectObject(hdc_loadBmp, sword1.img);
+						// 假设剑的单个方格对应的图案大小为32x32
+						int swordDrawW = 56.25 * sword1.width;
+						int swordDrawH = 56.25 * sword1.height;
+
+						int drawX, drawY;
+						if (sword1.inInventory) {
+							drawX = BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH;
+							drawY = BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT;
+						}
+						else {
+							drawX = sword1.screenX;
+							drawY = sword1.screenY;
+						}
+
+						TransparentBlt(
+							hdc_memBuffer,
+							drawX, drawY,
+							swordDrawW, swordDrawH,
+							hdc_loadBmp,
+							0, 0,
+							swordDrawW, swordDrawH,
+							RGB(255, 255, 255)
+						);
+
+					}
+					if (sword2.screenX >= -50 && sword2.screenY >= -50)
+					{
+						SelectObject(hdc_loadBmp, bmp_sword);
+						TransparentBlt(
+							hdc_memBuffer,
+							-1000, -1000,    // 背景框在界面上的起始位置
+							SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
+							hdc_loadBmp,
+							0, 0,                                   // 背景框在 BMP 图上的起始位置
+							SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
+							RGB(255, 255, 255)                      // 背景透明色
+						);
+						// 绘制剑
+						SelectObject(hdc_loadBmp, sword2.img);
+						// 假设剑的单个方格对应的图案大小为32x32
+						int swordDrawW1 = 56.25 * sword2.width;
+						int swordDrawH1 = 56.25 * sword2.height;
+
+						int drawX0, drawY0;
+						if (sword2.inInventory) {
+							drawX0 = BACKPACK_START_X + sword2.inventoryX * CELL_WIDTH;
+							drawY0 = BACKPACK_START_Y + sword2.inventoryY * CELL_HEIGHT;
+						}
+						else {
+							drawX0 = sword2.screenX;
+							drawY0 = sword2.screenY;
+						}
+
+						TransparentBlt(
+							hdc_memBuffer,
+							drawX0, drawY0,
+							swordDrawW1, swordDrawH1,
+							hdc_loadBmp,
+							0, 0,
+							swordDrawW1, swordDrawH1,
+							RGB(255, 255, 255)
+						);
+					}
+					if (shield.screenX >= -50 && shield.screenY >= -50)
+					{
+						SelectObject(hdc_loadBmp, bmp_shield);
+						TransparentBlt(
+							hdc_memBuffer,
+							-1000, -1000,    // 背景框在界面上的起始位置
+							SHIELD_WIDTH, SHIELD_HEIGHT,      // 背景框宽高
+							hdc_loadBmp,
+							0, 0,                                   // 背景框在 BMP 图上的起始位置
+							SHIELD_WIDTH, SHIELD_HEIGHT,      // BMP 图中背景框的宽高
+							RGB(255, 255, 255)                      // 背景透明色
+						);
+						SelectObject(hdc_loadBmp, shield.img);
+						// 假设剑的单个方格对应的图案大小为32x32
+						int shieldDrawW = 56.25 * shield.width;
+						int shieldDrawH = 56.25 * shield.height;
+
+						int drawX1, drawY1;
+						if (shield.inInventory) {
+							drawX1 = BACKPACK_START_X + shield.inventoryX * CELL_WIDTH;
+							drawY1 = BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT;
+						}
+						else {
+							drawX1 = shield.screenX;
+							drawY1 = shield.screenY;
+						}
+
+						TransparentBlt(
+							hdc_memBuffer,
+							drawX1, drawY1,
+							shieldDrawW, shieldDrawH,
+							hdc_loadBmp,
+							0, 0,
+							shieldDrawW, shieldDrawH,
+							RGB(255, 255, 255)
+						);
+					}
+					if (pokemon_ball1.screenX >= -50 && pokemon_ball1.screenY >= -50)
+					{
+						SelectObject(hdc_loadBmp, bmp_pokemon_ball);
+						TransparentBlt(
+							hdc_memBuffer,
+							-1000, -1000,    // 背景框在界面上的起始位置
+							POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // 背景框宽高
+							hdc_loadBmp,
+							0, 0,                                   // 背景框在 BMP 图上的起始位置
+							POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // BMP 图中背景框的宽高
+							RGB(255, 255, 255)                      // 背景透明色
+						);
+						SelectObject(hdc_loadBmp, pokemon_ball1.img);
+						// 假设剑的单个方格对应的图案大小为32x32
+						int pokemonballDrawW1 = 56.25 * pokemon_ball1.width;
+						int poekmonballDrawH1 = 56.25 * pokemon_ball1.height;
+
+						int drawX2, drawY2;
+						if (pokemon_ball1.inInventory) {
+							drawX2 = BACKPACK_START_X + pokemon_ball1.inventoryX * CELL_WIDTH;
+							drawY2 = BACKPACK_START_Y + pokemon_ball1.inventoryY * CELL_HEIGHT;
+						}
+						else {
+							drawX2 = pokemon_ball1.screenX;
+							drawY2 = pokemon_ball1.screenY;
+						}
+
+						TransparentBlt(
+							hdc_memBuffer,
+							drawX2, drawY2,
+							pokemonballDrawW1, poekmonballDrawH1,
+							hdc_loadBmp,
+							0, 0,
+							pokemonballDrawW1, poekmonballDrawH1,
+							RGB(255, 255, 255)
+						);
+					}
+					if (pokemon_ball2.screenX >= -50 && pokemon_ball2.screenY >= -50)
+					{
+						SelectObject(hdc_loadBmp, bmp_pokemon_ball);
+						TransparentBlt(
+							hdc_memBuffer,
+							-1000, -1000,    // 背景框在界面上的起始位置
+							POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // 背景框宽高
+							hdc_loadBmp,
+							0, 0,                                   // 背景框在 BMP 图上的起始位置
+							POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // BMP 图中背景框的宽高
+							RGB(255, 255, 255)                      // 背景透明色
+						);
+						SelectObject(hdc_loadBmp, pokemon_ball2.img);
+						// 假设剑的单个方格对应的图案大小为32x32
+						int pokemonballDrawW2 = 56.25 * pokemon_ball2.width;
+						int poekmonballDrawH2 = 56.25 * pokemon_ball2.height;
+
+						int drawX3, drawY3;
+						if (pokemon_ball2.inInventory) {
+							drawX3 = BACKPACK_START_X + pokemon_ball2.inventoryX * CELL_WIDTH;
+							drawY3 = BACKPACK_START_Y + pokemon_ball2.inventoryY * CELL_HEIGHT;
+						}
+						else {
+							drawX3 = pokemon_ball2.screenX;
+							drawY3 = pokemon_ball2.screenY;
+						}
+
+						TransparentBlt(
+							hdc_memBuffer,
+							drawX3, drawY3,
+							pokemonballDrawW2, poekmonballDrawH2,
+							hdc_loadBmp,
+							0, 0,
+							pokemonballDrawW2, poekmonballDrawH2,
+							RGB(255, 255, 255)
+						);
+					}
 				}
 			}
 
@@ -2391,6 +2665,7 @@ void Paint(HWND hWnd)
 		}
 		else
 		{
+
 		SelectObject(hdc_loadBmp, bmp_battlemap);
 		TransparentBlt(
 			hdc_memBuffer,
@@ -2442,6 +2717,7 @@ void Paint(HWND hWnd)
 				RGB(255, 255, 255) // 背景透明色
 			);
 		}
+
 		SelectObject(hdc_loadBmp, bmp_dialog);
 		TransparentBlt(
 			hdc_memBuffer,
@@ -2450,6 +2726,9 @@ void Paint(HWND hWnd)
 			0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
 			RGB(255, 255, 255)
 		);
+
+		DrawBattleDialog(hdc_memBuffer);
+
 		if (isBackpackOpen)
 		{
 			//绘制背包背景
@@ -2518,30 +2797,43 @@ void Paint(HWND hWnd)
 		SelectObject(hdc_memBuffer, hFont);
 		SetTextColor(hdc_memBuffer, RGB(0, 0, 0)); // 设置颜色:黑色字体
 		SetBkMode(hdc_memBuffer, OPAQUE); // 设置背景模式为不透明
-
 		// 定义绘制区域
 		RECT rect;
 		rect.left = 670;
 		rect.top = WINDOW_HEIGHT - 630;
 		rect.right = WINDOW_WIDTH - 110;
 		rect.bottom = WINDOW_HEIGHT - 18;
-
-
 		// 绘制文本
 		DrawTextW(hdc_memBuffer, enemy_pokemon_name, -1, &rect, DT_WORDBREAK);
-		
-		//绘制背包背景
-		SelectObject(hdc_loadBmp, bmp_pokemon1);
-		TransparentBlt(
-			hdc_memBuffer,
-			BATTLEPOKEMON_START_X, BATTLEPOKEMON_START_Y,    // 背景框在界面上的起始位置
-			BATTLEPOKEMON_WIDTH, BATTLEPOKEMON_HEIGHT,      // 背景框宽高
-			hdc_loadBmp,
-			0, 0,                                   // 背景框在 BMP 图上的起始位置
-			BATTLEPOKEMON_WIDTH, BATTLEPOKEMON_HEIGHT,      // BMP 图中背景框的宽高
-			RGB(255, 255, 255)                      // 背景透明色
-		);
 
+		if (isPokemonAcceptance == false)
+		{
+			//绘制背包背景
+			SelectObject(hdc_loadBmp, bmp_pokemon1);
+			TransparentBlt(
+				hdc_memBuffer,
+				BATTLEPOKEMON_START_X, BATTLEPOKEMON_START_Y,    // 背景框在界面上的起始位置
+				BATTLEPOKEMON_WIDTH, BATTLEPOKEMON_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				BATTLEPOKEMON_WIDTH, BATTLEPOKEMON_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+		}
+		else if (isPokemonAcceptance == true)
+		{
+			SelectObject(hdc_loadBmp, bmp_pokemon_ball);
+			TransparentBlt(
+				hdc_memBuffer,
+				POKEMON_BALLACC_START_X, POKEMON_BALLACC_START_Y,    // 背景框在界面上的起始位置
+				POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				POKEMON_BALL_WIDTH, POKEMON_BALL_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+			MessageBox(hWnd, L"收服成功!", L"收服状态", MB_OK | MB_ICONINFORMATION);
+		}
 		//绘制蓝条
 		for (int i = 0; i < currentpokemonmpBlocks; ++i) {
 			SelectObject(hdc_loadBmp, bmp_mpbar);

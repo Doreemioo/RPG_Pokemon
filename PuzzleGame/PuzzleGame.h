@@ -130,6 +130,8 @@ using namespace std;
 #define LOSE_HEIGHT				66
 #define LOSE_START_X			400
 #define LOSE_START_Y			250
+#define POKEMON_BALLACC_START_X	600
+#define POKEMON_BALLACC_START_Y	330
 
 
 
@@ -360,6 +362,7 @@ void PokemonAttack(HWND hWnd);
 
 void ResetGame(HWND hWnd);
 
+void DrawBattleDialog(HDC hdc);
 #pragma region 其它游戏状态处理函数声明
 
 // 添加按钮函数
