@@ -108,5 +108,11 @@
     <Image Include="resources\lose.bmp">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="resources\map2.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="resources\YanLong_Shield.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

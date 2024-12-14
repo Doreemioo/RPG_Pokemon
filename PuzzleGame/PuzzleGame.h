@@ -29,6 +29,7 @@ using namespace std;
 #define STAGE_1					1		//第一个游戏场景的ID
 #define STAGE_2					2
 #define STAGE_3					3
+#define STAGE_4					4
 
 //尺寸
 #define BG_BITMAP_WIDTH			960		//背景图片的位图宽度
@@ -197,7 +198,10 @@ struct NPC
 	int npcID;				//NPC编号
 	HBITMAP img;			//图片
 	bool visible;			//该NPC是否可见
-	bool task_complete;		//该npc的任务是否完成。决定了与npc对话时他会说什么，以及其它行为
+	bool task1_start = true;
+	bool task1_complete = false;	//该npc的任务是否完成。决定了与npc对话时他会说什么，以及其它行为
+	bool task2_start = false;
+	bool task2_complete = false;
 
 	int frame_row;			//当前显示的是图像的第几行
 	int frame_column;		//当前显示的是图像的第几列
@@ -215,9 +219,14 @@ struct NPC
 	double vy;		//速度y
 	int health;		//生命值
 
-	vector<const wchar_t*> conversations_before;	//任务完成前NPC的台词
-	vector<const wchar_t*> conversations_after;		//任务完成后NPC的台词
-	int next_conversation_id;				//NPC下一次要说第几句台词
+	vector<const wchar_t*> conversations1_before;	//任务完成前NPC的台词
+	vector<const wchar_t*> conversations1_after;	//任务完成后NPC的台词
+	vector<const wchar_t*> conversations2_before;	//任务完成前NPC的台词
+	vector<const wchar_t*> conversations2_after;	//任务完成后NPC的台词
+	int next_conversation_id_before1 = 0;				//NPC下一次要说第几句台词
+	int next_conversation_id_after1 = 0;				//NPC下一次要说第几句台词
+	int next_conversation_id_before2 = 0;				//NPC下一次要说第几句台词
+	int next_conversation_id_after2 = 0;				//NPC下一次要说第几句台词
 };
 
 // 玩家结构体
@@ -347,7 +356,7 @@ void TimerUpdate(HWND hWnd, WPARAM wParam, LPARAM lParam);
 void CheckCollision();
 
 //碰撞箱2
-bool CheckCollision1(int x, int y, int direction, int map[20][28]);
+bool CheckCollision1(int x, int y, int direction, int map[20][28], int stageid);
 #pragma endregion
 
 //宝可梦随机运动函数

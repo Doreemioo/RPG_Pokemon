@@ -33,6 +33,8 @@ HBITMAP bmp_pokemon_ball;	//道具精灵球图标
 HBITMAP bmp_battlemap;		//战斗背景图标
 HBITMAP bmp_victory;		//胜利图标
 HBITMAP bmp_lose;			//失败图标
+HBITMAP bmp_map2;			//地图砖块图像
+HBITMAP bmp_yanlong_shield;	//地图砖块图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -62,7 +64,7 @@ int x, y;//记录鼠标点击位置的坐标
 bool isPaused = false; // 游戏是否处于暂停状态
 bool show_reward_popup = false;
 int inventory[4][4]; // 0表示空，1表示被剑占用（示例）
-bool isInbattle;
+bool isInbattle = false;
 struct BackpackItem {
 	int itemID;      // 物品唯一标识符
 	int inventoryX;  // 背包中的位置 X
@@ -79,6 +81,8 @@ bool isBattled = false;
 bool isPokemonAcceptance = false;
 const wchar_t** battleDialogs = nullptr; // 动态指向当前的对话数组
 int* dialogIndex = nullptr;             // 动态指向当前对话索引
+bool isInbattle2 = false;
+bool isYanlongShieldAvailable = false; // 标志是否可以显示 yanlong_shield
 
 Item sword1 = {
 	false, // inInventory
@@ -145,6 +149,20 @@ Item pokemon_ball2 = {
 	bmp_pokemon_ball  // img
 };
 
+Item yanlong_shield = {
+	false, // inInventory
+	0,     // inventoryX
+	0,     // inventoryY
+	2,     // width
+	2,     // height
+	false, // isDragging
+	0, 0,  // offsetX, offsetY
+	400, 250, // screenX, screenY
+	400, 250,
+	bmp_yanlong_shield  // img
+};
+
+
 
 //TODO 更多的全局变量
 
@@ -185,26 +203,26 @@ int map_stage1[20][28] = {
 };
 //第二个关卡地图
 int map_stage2[20][28] = {
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,},
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+	{ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  5,  6,  7,  4,  5,  6,  7,  0,  0,  0,  0,  6,  7,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 14, 15, 13, 13, 14, 15, 13, 13, 13, 13, 14, 15,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,},
+	{ 13, 13, 8 , 9 , 8 , 9 , 10, 11, 10, 11, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,},
+	{ 13, 13, 16, 17, 16, 17, 18, 19, 18, 19, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 30, 31,},
+	{ 13, 13, 8 , 9 , 8 , 9 , 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 38, 39,},
+	{ 13, 13, 16, 17, 16, 17, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 30, 31,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 38, 39,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 8 , 9 , 8 , 9 , 10, 11, 10, 11,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 16, 17, 16, 17, 18, 19, 18, 19,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 8 , 9 , 8 , 9 , 13, 13, 13, 13,},
+	{ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 16, 17, 16, 17, 13, 13, 13, 13,},
+	{ 13, 13, 34, 35, 13, 13, 34, 35, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,},
+	{ 13, 13, 42, 43, 13, 13, 42, 43, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,},
+	{ 48, 48, 48, 48, 13, 13, 48, 48, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 48, 48, 48, 48, 48, 48, 48,},
+	{ 56, 56, 56, 56, 13, 13, 56, 56, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 56, 56, 56, 56, 56, 56, 56,},
 };
 int map[20][28] = { 0 };	//存储当前关卡的地图
 
@@ -233,6 +251,14 @@ const wchar_t* battleDialogs3[] = {
 	L"喷火龙：呵，不自量力，去死吧！…………按“X”键继续"
 };
 int dialogIndex3 = 0; // 当前显示的对话索引
+
+const wchar_t* battleDialogs4[] = {
+	L"你：？！我嘞个装备哥，还是pvp大佬，不过没关系，今天我便在此为民除害！…………按“X”键继续",
+	L"村长：哼哼，妄想打败我吗？就靠你那一件炎龙铠甲？招笑，就决定是你了！水箭龟！…………按“X”键继续",
+	L"你：不行我这装备属性被完全克制啊……难道就要到这里了吗…………按“X”键继续",
+	L"村长：唐完了小子，就这啊？也妄想为民除害？再见了！…………按“X”键继续"
+};
+int dialogIndex4 = 0; // 当前显示的对话索引
 
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -357,6 +383,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int pokemonballH1 = 56.25 * pokemon_ball1.height;
 	int pokemonballW2 = 56.25 * pokemon_ball2.width;
 	int pokemonballH2 = 56.25 * pokemon_ball2.height;
+	int yanlongshieldW = 56.25 * yanlong_shield.width;
+	int yanlongshieldH = 56.25 * yanlong_shield.height;
 
 	int sword1ScreenX = sword1.inInventory ? (BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH) : sword1.screenX;
 	int sword1ScreenY = sword1.inInventory ? (BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT) : sword1.screenY;
@@ -368,7 +396,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int pokemonballScreenY1 = pokemon_ball1.inInventory ? (BACKPACK_START_Y + pokemon_ball1.inventoryY * CELL_HEIGHT) : pokemon_ball1.screenY;
 	int pokemonballScreenX2 = pokemon_ball2.inInventory ? (BACKPACK_START_X + pokemon_ball2.inventoryX * CELL_WIDTH) : pokemon_ball2.screenX;
 	int pokemonballScreenY2 = pokemon_ball2.inInventory ? (BACKPACK_START_Y + pokemon_ball2.inventoryY * CELL_HEIGHT) : pokemon_ball2.screenY;
+	int yanlongshieldScreenX = yanlong_shield.inInventory ? (BACKPACK_START_X + yanlong_shield.inventoryX * CELL_WIDTH) : yanlong_shield.screenX;
+	int yanlongshieldScreenY = yanlong_shield.inInventory ? (BACKPACK_START_Y + yanlong_shield.inventoryY * CELL_HEIGHT) : yanlong_shield.screenY;
 
+	if (isBattled && isVictory) {
+		isYanlongShieldAvailable = true;
+	}
 	switch (message)
 	{
 	case WM_CREATE:
@@ -543,6 +576,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pokemon_ball2.screenY = my - pokemon_ball2.offsetY;
 			InvalidateRect(hWnd, NULL, FALSE); // 刷新绘图
 		}
+		if (yanlong_shield.isDragging) {
+			int mx = LOWORD(lParam);
+			int my = HIWORD(lParam);
+
+			yanlong_shield.screenX = mx - yanlong_shield.offsetX;
+			yanlong_shield.screenY = my - yanlong_shield.offsetY;
+
+			InvalidateRect(hWnd, NULL, FALSE); // 刷新绘图
+		}
 
 		break;
 	}
@@ -560,6 +602,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		pokemonballH1 = 56.25 * pokemon_ball1.height;
 		pokemonballW2 = 56.25 * pokemon_ball2.width;
 		pokemonballH2 = 56.25 * pokemon_ball2.height;
+		yanlongshieldW = 56.25 * yanlong_shield.width;
+		yanlongshieldH = 56.25 * yanlong_shield.height;
 		sword1ScreenX = sword1.inInventory ?
 			(BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH) : sword1.screenX;
 		sword1ScreenY = sword1.inInventory ?
@@ -580,6 +624,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			(BACKPACK_START_X + pokemon_ball2.inventoryX * CELL_WIDTH) : pokemon_ball2.screenX;
 		pokemonballScreenY2 = pokemon_ball2.inInventory ?
 			(BACKPACK_START_Y + pokemon_ball2.inventoryY * CELL_HEIGHT) : pokemon_ball2.screenY;
+		yanlongshieldScreenX = yanlong_shield.inInventory ?
+			(BACKPACK_START_X + yanlong_shield.inventoryX * CELL_WIDTH) : yanlong_shield.screenX;
+		yanlongshieldScreenY = yanlong_shield.inInventory ?
+			(BACKPACK_START_Y + yanlong_shield.inventoryY * CELL_HEIGHT) : yanlong_shield.screenY;
 
 		// 然后再做点击检测、拖拽逻辑
 		if (x >= sword1ScreenX && x < sword1ScreenX + swordW1 &&
@@ -658,6 +706,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					inventory[pokemon_ball2.inventoryY][pokemon_ball2.inventoryX + i] = 0;
 				}
 				pokemon_ball2.inInventory = false;
+			}
+		}
+
+		if (x >= yanlongshieldScreenX && x < yanlongshieldScreenX + yanlongshieldW &&
+			y >= yanlongshieldScreenY && y < yanlongshieldScreenY + yanlongshieldH) {
+			// 点中了剑
+			yanlong_shield.isDragging = true;
+			yanlong_shield.offsetX = x - yanlongshieldScreenX;
+			yanlong_shield.offsetY = y - yanlongshieldScreenY;
+			if (yanlong_shield.inInventory) {
+				// 清空背包格子
+				for (int i = 0; i < yanlong_shield.width; i++) {
+					inventory[yanlong_shield.inventoryY][yanlong_shield.inventoryX + i] = 0;
+				}
+				yanlong_shield.inInventory = false;
 			}
 		}
 
@@ -1098,7 +1161,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					for (int i = 0; i < pokemon_ball2.width; i++) {
 						for (int j = 0; j < pokemon_ball2.height; j++)
 						{
-							inventory[cellY + j][cellX + i] = 2;
+							inventory[cellY + j][cellX + i] = 5;
 						}
 					}
 					pokemon_ball2.inInventory = true;
@@ -1139,7 +1202,99 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 				InvalidateRect(hWnd, NULL, FALSE);
 			}
-			break;
+		}
+		if (yanlong_shield.isDragging && isBackpackOpen) {
+			yanlong_shield.isDragging = false;
+
+			int mx = LOWORD(lParam);
+			int my = HIWORD(lParam);
+
+			// 尝试将剑放入背包
+			// 计算鼠标松开时对应的背包格子坐标
+			int cellX = (mx - BACKPACK_START_X) / CELL_WIDTH;
+			int cellY = (my - BACKPACK_START_Y) / CELL_HEIGHT;
+
+			// 检查是否拖到背包区域外
+			bool isOutsideBackpack = (mx < BACKPACK_START_X || mx >= BACKPACK_START_X + BACKPACK_WIDTH ||
+				my < BACKPACK_START_Y || my >= BACKPACK_START_Y + BACKPACK_HEIGHT);
+
+			if (isOutsideBackpack) {
+				// 弹出确认框
+				int result = MessageBox(hWnd, L"是否丢弃该道具？", L"丢弃确认", MB_YESNO | MB_ICONQUESTION);
+				if (result == IDYES) {
+					// 用户选择“是”，从全局背包中删除
+					globalBackpack.erase(
+						std::remove_if(globalBackpack.begin(), globalBackpack.end(),
+							[](const BackpackItem& item) { return item.itemID == 6; }),
+						globalBackpack.end());
+					yanlong_shield.inInventory = false; // 确保道具状态更新
+					yanlong_shield.screenX = -51;        // 设置为不可见的屏幕坐标
+					yanlong_shield.screenY = -51;
+				}
+				else {
+					// 用户选择“否”，将道具放回原位
+					yanlong_shield.screenX = yanlong_shield.startX;
+					yanlong_shield.screenY = yanlong_shield.startY;
+					yanlong_shield.inInventory = false; // 不在背包中
+				}
+			}
+			else
+			{
+				// 检查是否能放置剑（需要3个连续横向格子）
+				bool canPlace = false;
+				if (cellX >= 0 && cellY >= 0 && cellX + yanlong_shield.width - 1 < 4 && cellY < 4) {
+					// 检查这3个格子是否为空
+					bool allEmpty = true;
+					for (int i = 0; i < yanlong_shield.width; i++) {
+						if (inventory[cellY][cellX + i] != 0) {
+							allEmpty = false;
+							break;
+						}
+					}
+					if (allEmpty) {
+						canPlace = true;
+					}
+				}
+
+				if (canPlace) {
+					// 放置剑
+					for (int i = 0; i < yanlong_shield.width; i++) {
+						for (int j = 0; j < yanlong_shield.height; j++)
+						{
+							inventory[cellY + j][cellX + i] = 6;
+						}
+					}
+					yanlong_shield.inInventory = true;
+					yanlong_shield.inventoryX = cellX;
+					yanlong_shield.inventoryY = cellY;
+
+					// 更新全局背包
+					bool yanlong_shieldExists = false;
+					for (auto& backpackyanlong_shield : globalBackpack) {
+						if (backpackyanlong_shield.itemID == 6) {
+							backpackyanlong_shield.inventoryX = cellX;
+							backpackyanlong_shield.inventoryY = cellY;
+							backpackyanlong_shield.inInventory = true;
+							yanlong_shieldExists = true;
+							break;
+						}
+					}
+
+					if (!yanlong_shieldExists) {
+						globalBackpack.push_back({ 6, cellX, cellY, yanlong_shield.width, yanlong_shield.height, true });
+					}
+				}
+				else {
+					yanlong_shield.screenX = yanlong_shield.startX;
+					yanlong_shield.screenY = yanlong_shield.startY;
+					yanlong_shield.inInventory = false; // 确保状态更新正确
+				}
+			}
+			if (isYanlongShieldAvailable && !isBackpackOpen)
+			{
+				isYanlongShieldAvailable = false;
+			}
+			InvalidateRect(hWnd, NULL, FALSE); // 刷新界面
 		}
 	case WM_TIMER:
 	{
@@ -1196,6 +1351,8 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_battlemap = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BATTLEMAP));
 	bmp_victory = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_VICTORY));
 	bmp_lose = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_LOSE));
+	bmp_map2 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MAP2));
+	bmp_yanlong_shield = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_YANLONG_SHIELD));
 
 
 	//添加按钮
@@ -1367,9 +1524,19 @@ void UpdatePlayer(HWND hWnd) {
 			break;
 		};
 		// 检查碰撞，如果碰撞则还原位置
-		if (CheckCollision1(player->x / BLOCK_SIZE_X, player->y / BLOCK_SIZE_Y, player->direction, map_stage1)) {
-			player->x = oldX;
-			player->y = oldY;
+		if (currentStage->stageID == STAGE_1)
+		{
+			if (CheckCollision1(player->x / BLOCK_SIZE_X, player->y / BLOCK_SIZE_Y, player->direction, map_stage1, STAGE_1)) {
+				player->x = oldX;
+				player->y = oldY;
+			}
+		}
+		if (currentStage->stageID == STAGE_2)
+		{
+			if (CheckCollision1(player->x / BLOCK_SIZE_X, player->y / BLOCK_SIZE_Y, player->direction, map_stage2, STAGE_2)) {
+				player->x = oldX;
+				player->y = oldY;
+			}
 		}
 	}
 
@@ -1450,13 +1617,32 @@ void UpdateMonsters(HWND hWnd)
 void UpdateMaps(HWND hWnd)
 {
 	//走到地图边界，切换到map2
-	if (currentStage->stageID == STAGE_1 && player->y <= 0 && map[player->y / BLOCK_SIZE_Y][player->x / BLOCK_SIZE_Y] == 0)
-	{
-		InitStage(hWnd, STAGE_2);
-	}
 	if (currentStage->stageID == STAGE_1 && isInbattle)
 	{
 		InitStage(hWnd, STAGE_3);
+	}
+	if (!isInbattle)
+	{
+		for (int i = 0; i < npcs.size(); i++) {
+			NPC* npc = npcs[i];
+			if (currentStage->stageID == STAGE_1 && npc->next_conversation_id_after1 >= npc->conversations1_after.size())
+			{
+				InitStage(hWnd, STAGE_2);
+				npc->task2_start = true;
+				npc->task1_start = false;
+				npc->task1_complete = false;
+				npc->task2_complete = false;
+			}
+			if (currentStage->stageID == STAGE_2 && npc->next_conversation_id_before2 >= npc->conversations2_before.size())
+			{
+				InitStage(hWnd, STAGE_4);
+				isInbattle2 = true;
+				npc->task2_start = false;
+				npc->task1_start = false;
+				npc->task1_complete = false;
+				npc->task2_complete = false;
+			}
+		}
 	}
 }
 
@@ -1469,15 +1655,15 @@ void UpdateEvents(HWND hWnd)
 //抬起空格时触发，开启对话
 void HandleConversationEvents(HWND hWnd)
 {
-	for (int i = 0; i < npcs.size(); i++) {
-		NPC* npc = npcs[i];
-		if (isBattled)
-		{
-			npc->task_complete = true;
-		}
-		if (npc->task_complete && npc->next_conversation_id >= npc->conversations_before.size())
-		{
-			npc->next_conversation_id = 0;
+	if (currentStage->stageID == STAGE_1)
+	{
+		for (int i = 0; i < npcs.size(); i++) {
+			NPC* npc = npcs[i];
+			if (isBattled)
+			{
+				npc->task1_complete = true;
+				npc->task1_start = false;
+			}
 		}
 	}
 	//当前已经开启对话，再按一次空格关闭
@@ -1488,7 +1674,7 @@ void HandleConversationEvents(HWND hWnd)
 			NPC* npc = npcs[i];
 			// 判断当前NPC是否对话已到最后一句
 			// 这里假设 conversations_before 有 3句，当 next_conversation_id 达到3时说明前面3句已说完
-			if (!npc->task_complete && npc->next_conversation_id == npc->conversations_before.size() - 1) {
+			if (!npc->task1_complete && npc->next_conversation_id_before1 == npc->conversations1_before.size() - 1) {
 				show_reward_popup = true;
 			}
 		}
@@ -1504,22 +1690,40 @@ void HandleConversationEvents(HWND hWnd)
 
 			in_conversation = true;
 
-			if (!npc->task_complete) {
-				if (npc->next_conversation_id < npc->conversations_before.size()) {
-					converstaion_content = npc->conversations_before[npc->next_conversation_id];
-					npc->next_conversation_id++;
+			if (npc->task1_start && !npc->task1_complete && !npc->task2_complete && !npc->task2_start) {
+				if (npc->next_conversation_id_before1 < npc->conversations1_before.size()) {
+					converstaion_content = npc->conversations1_before[npc->next_conversation_id_before1];
+					npc->next_conversation_id_before1++;
 				}
 				else {
 					converstaion_content = L"------------------------------"; // 对话结束
 				}
 			}
-			else {
-				if (npc->next_conversation_id < npc->conversations_after.size()) {
-					converstaion_content = npc->conversations_after[npc->next_conversation_id];
-					npc->next_conversation_id++;
+			else if(!npc->task1_start && npc->task1_complete && !npc->task2_complete && !npc->task2_start) {
+				if (npc->next_conversation_id_after1 < npc->conversations1_after.size()) {
+					converstaion_content = npc->conversations1_after[npc->next_conversation_id_after1];
+					npc->next_conversation_id_after1++;
 				}
-				else if (npc->next_conversation_id >= npc->conversations_after.size())
+				else if (npc->next_conversation_id_after1 >= npc->conversations1_after.size())
 				{
+					converstaion_content = L"------------------------------"; // 对话结束
+				}
+			}
+			else if (!npc->task1_start && !npc->task1_complete && !npc->task2_complete && npc->task2_start) {
+				if (npc->next_conversation_id_before2 < npc->conversations2_before.size()) {
+					converstaion_content = npc->conversations2_before[npc->next_conversation_id_before2];
+					npc->next_conversation_id_before2++;
+				}
+				else {
+					converstaion_content = L"------------------------------"; // 对话结束
+				}
+			}
+			else if (!npc->task1_start && !npc->task1_complete && npc->task2_complete && !npc->task2_start) {
+				if (npc->next_conversation_id_after2 < npc->conversations2_after.size()) {
+					converstaion_content = npc->conversations2_after[npc->next_conversation_id_after2];
+					npc->next_conversation_id_after2++;
+				}
+				else {
 					converstaion_content = L"------------------------------"; // 对话结束
 				}
 			}
@@ -1590,7 +1794,7 @@ void CheckCollision() {
 }
 
 // 碰撞检测函数
-bool CheckCollision1(int x, int y, int direction, int map[20][28]) {
+bool CheckCollision1(int x, int y, int direction, int map[20][28], int stageid) {
 	// 根据方向计算玩家下一步的目标坐标
 	int targetX = x;
 	int targetY = y;
@@ -1616,9 +1820,12 @@ bool CheckCollision1(int x, int y, int direction, int map[20][28]) {
 		return true; // 碰撞，无法移动
 	}
 
-	// 检查是否碰到不可通过的障碍物（3, 7, 15）
-	if (map[targetY][targetX] == 3 || map[targetY][targetX] == 7 || map[targetY][targetX] == 15 || map[targetY][targetX] == 12 || map[targetY][targetX] == 16 || map[targetY][targetX] == 17 || map[targetY][targetX] == 18 || map[targetY][targetX] == 19 || map[targetY][targetX] == 20 || map[targetY][targetX] == 21 || map[targetY][targetX] == 25 || map[targetY][targetX] == 26 || map[targetY][targetX] == 30 || map[targetY][targetX] == 31 || map[targetY][targetX] == 35 || map[targetY][targetX] == 36 || map[targetY][targetX] == 33 || map[targetY][targetX] == 39 || map[targetY][targetX] == 40) {
-		return true; // 碰撞，无法移动
+	if (stageid == STAGE_1)
+	{
+		// 检查是否碰到不可通过的障碍物（3, 7, 15）
+		if (map[targetY][targetX] == 3 || map[targetY][targetX] == 7 || map[targetY][targetX] == 15 || map[targetY][targetX] == 12 || map[targetY][targetX] == 16 || map[targetY][targetX] == 17 || map[targetY][targetX] == 18 || map[targetY][targetX] == 19 || map[targetY][targetX] == 20 || map[targetY][targetX] == 21 || map[targetY][targetX] == 25 || map[targetY][targetX] == 26 || map[targetY][targetX] == 30 || map[targetY][targetX] == 31 || map[targetY][targetX] == 35 || map[targetY][targetX] == 36 || map[targetY][targetX] == 33 || map[targetY][targetX] == 39 || map[targetY][targetX] == 40) {
+			return true; // 碰撞，无法移动
+		}
 	}
 
 	return false; // 无碰撞，可以移动
@@ -1690,6 +1897,8 @@ HBITMAP GetItemBitmap(int itemID) {
 		return bmp_pokemon_ball;
 	case 5: // 精灵球2
 		return bmp_pokemon_ball;
+	case 6: // 精灵球2
+		return bmp_yanlong_shield;
 	default:
 		return NULL; // 返回空值表示未找到
 	}
@@ -1763,6 +1972,7 @@ void DrawBattleDialog(HDC hdc) {
 	DrawTextW(hdc, currentDialog, -1, &rect, DT_WORDBREAK);
 }
 
+
 //TODO: 添加游戏需要的更多函数
 
 // 添加按钮函数
@@ -1807,7 +2017,7 @@ NPC* CreateNPC(int x, int y, int npc_id)
 	NPC* npc = new NPC();
 	npc->npcID = npc_id;
 	npc->visible = true;
-	npc->task_complete = false;
+	npc->task1_complete = false;
 	npc->x = x;
 	npc->y = y;
 	npc->direction = UNIT_DIRECT_DOWN;
@@ -1819,23 +2029,29 @@ NPC* CreateNPC(int x, int y, int npc_id)
 	npc->frame_sequence = NPC_FRAMES_HOLD;
 	npc->frame_count = NPC_FRAMES_HOLD_COUNT;
 	npc->frame_id = 0;
-	npc->next_conversation_id = 0;
+	npc->next_conversation_id_before1 = 0;
+	npc->next_conversation_id_after1 = 0;
 	//根据不同NPC初始化不同的图像和对话
 	switch (npc_id)
 	{
 	case NPC_MAN1_ID: {
 		npc->img = bmp_NPC_MAN1;
-		npc->conversations_before.push_back(L"村长：Ciallo！勇者！欢迎来到宝可梦：背包乱斗！");
-		npc->conversations_before.push_back(L"村长：在这个世界中，宝可梦没有等级，只能通过道具不断变强！");
-		npc->conversations_before.push_back(L"村长：最近下面的房子都被那只喷火龙糟蹋的不成样子了,TA以前明明是我们的守护神……");
-		npc->conversations_before.push_back(L"你：啊？可是我还没有宝可梦？这怎么打？！");
-		npc->conversations_before.push_back(L"村长：没关系！送给你这些基础道具，请全部拿走他们，每个道具会占据的空间，打开背包，将他们合理安放");
-		npc->conversations_before.push_back(L"合理运用道具！击败或收服这只宝可梦吧！");
-		npc->conversations_after.push_back(L"村长：哦谢谢你，我的勇者，你平息了暴乱！");
-		npc->conversations_after.push_back(L"村长：这件炎龙铠甲就上交村里吧，毕竟喷火龙一直都是我们村的守护神");
-		npc->conversations_after.push_back(L"你：？？！这明明是我打败的喷火龙，为什么要上交村里？");
-		npc->conversations_after.push_back(L"村长：哼，看来你敬酒不吃吃罚酒了！来人！");
-		npc->conversations_after.push_back(L"你：？你们要干什么！补药啊！");
+		npc->conversations1_before.push_back(L"村长：Ciallo！勇者！欢迎来到宝可梦：背包乱斗！");
+		npc->conversations1_before.push_back(L"村长：在这个世界中，宝可梦没有等级，只能通过道具不断变强！");
+		npc->conversations1_before.push_back(L"村长：最近下面的房子都被那只喷火龙糟蹋的不成样子了,TA以前明明是我们的守护神……");
+		npc->conversations1_before.push_back(L"你：啊？可是我还没有宝可梦？这怎么打？！");
+		npc->conversations1_before.push_back(L"村长：没关系！送给你这些基础道具，请全部拿走他们，每个道具会占据的空间，打开背包，将他们合理安放");
+		npc->conversations1_before.push_back(L"合理运用道具！击败或收服这只宝可梦吧！");
+		npc->conversations1_after.push_back(L"村长：哦谢谢你，我的勇者，你平息了暴乱！");
+		npc->conversations1_after.push_back(L"村长：这件喷火龙爆出来的炎龙铠甲就上交村里吧，毕竟喷火龙一直都是我们村的守护神");
+		npc->conversations1_after.push_back(L"你：？？！这明明是我打败的喷火龙，为什么要上交村里？");
+		npc->conversations1_after.push_back(L"村长：哼，看来你敬酒不吃吃罚酒了！来人！");
+		npc->conversations1_after.push_back(L"你：？你们要干什么！补药啊！");
+		npc->conversations2_before.push_back(L"村长：呵呵，醒了啊，那就乖乖的把炎龙铠甲交出来吧！");
+		npc->conversations2_before.push_back(L"你：好啊，好一个过河拆桥的出生");
+		npc->conversations2_before.push_back(L"村长：女娲的，别以为我不知道那炎龙铠甲有多珍贵，这所谓的守护神最后为我们奉献了他自己的命，那是他的荣幸！");
+		npc->conversations2_before.push_back(L"你：我上早八！去死吧");
+
 		break;
 	}
 	default:
@@ -2010,9 +2226,9 @@ void InitStage(HWND hWnd, int stageID)
 		{
 			NPC* npc = npcs[i];
 			if (false) //TODO：加载游戏界面需要的按钮
-				npc->visible = true;
-			else
 				npc->visible = false;
+			else
+				npc->visible = true;
 		}
 		//Monster的可见性
 		for (int i = 0; i < monsters.size(); i++)
@@ -2054,7 +2270,7 @@ void Paint(HWND hWnd)
 			RGB(255, 255, 255));
 
 	}
-	else if (currentStage->stageID >= STAGE_1 && currentStage->stageID <= STAGE_2) //TODO：添加多个游戏场景
+	else if (currentStage->stageID == STAGE_1) //TODO：添加多个游戏场景
 	{
 
 		if (isPaused)
@@ -2253,6 +2469,46 @@ void Paint(HWND hWnd)
 				rect.bottom = WINDOW_HEIGHT - 50;
 				DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
 			}
+			if (isYanlongShieldAvailable && !yanlong_shield.inInventory) {
+				if (yanlong_shield.screenX >= -50 && yanlong_shield.screenY >= -50)
+				{
+					SelectObject(hdc_loadBmp, bmp_yanlong_shield);
+					TransparentBlt(
+						hdc_memBuffer,
+						-1000, -1000,    // 背景框在界面上的起始位置
+						112.5, 112.5,      // 背景框宽高
+						hdc_loadBmp,
+						0, 0,                                   // 背景框在 BMP 图上的起始位置
+						112.5, 112.5,      // BMP 图中背景框的宽高
+						RGB(255, 255, 255)                      // 背景透明色
+					);
+					SelectObject(hdc_loadBmp, yanlong_shield.img);
+					// 假设剑的单个方格对应的图案大小为32x32
+					int yanlong_shieldDrawW = 56.25 * yanlong_shield.width;
+					int yanlong_shieldDrawH = 56.25 * yanlong_shield.height;
+
+					int drawX4, drawY4;
+					if (yanlong_shield.inInventory) {
+						drawX4 = BACKPACK_START_X + yanlong_shield.inventoryX * CELL_WIDTH;
+						drawY4 = BACKPACK_START_Y + yanlong_shield.inventoryY * CELL_HEIGHT;
+					}
+					else {
+						drawX4 = yanlong_shield.screenX;
+						drawY4 = yanlong_shield.screenY;
+					}
+
+					TransparentBlt(
+						hdc_memBuffer,
+						drawX4, drawY4,
+						yanlong_shieldDrawW, yanlong_shieldDrawW,
+						hdc_loadBmp,
+						0, 0,
+						yanlong_shieldDrawW, yanlong_shieldDrawW,
+						RGB(255, 255, 255)
+					);
+
+				}
+			}
 			bool swordVisible = false;
 			if (show_reward_popup)
 			{
@@ -2450,7 +2706,7 @@ void Paint(HWND hWnd)
 				}
 			}
 
-			else if (sword1.inInventory || sword2.inInventory || shield.inInventory || sword1.isDragging || sword2.isDragging || shield.isDragging)
+			else if (sword1.inInventory || sword2.inInventory || shield.inInventory || sword1.isDragging || sword2.isDragging || shield.isDragging || yanlong_shield.inInventory)
 			{
 				if (isBackpackOpen)
 				{
@@ -2644,7 +2900,50 @@ void Paint(HWND hWnd)
 					}
 				}
 			}
+			if (!show_reward_popup && ((isYanlongShieldAvailable && !yanlong_shield.inInventory) || yanlong_shield.inInventory || yanlong_shield.isDragging))
+			{
+				if (isBackpackOpen)
+				{
+					if (yanlong_shield.screenX >= -50 && yanlong_shield.screenY >= -50)
+					{
+						SelectObject(hdc_loadBmp, bmp_yanlong_shield);
+						TransparentBlt(
+							hdc_memBuffer,
+							-1000, -1000,    // 背景框在界面上的起始位置
+							112.5, 112.5,      // 背景框宽高
+							hdc_loadBmp,
+							0, 0,                                   // 背景框在 BMP 图上的起始位置
+							112.5, 112.5,      // BMP 图中背景框的宽高
+							RGB(255, 255, 255)                      // 背景透明色
+						);
+						SelectObject(hdc_loadBmp, yanlong_shield.img);
+						// 假设剑的单个方格对应的图案大小为32x32
+						int yanlong_shieldDrawW = 56.25 * yanlong_shield.width;
+						int yanlong_shieldDrawH = 56.25 * yanlong_shield.height;
 
+						int drawX4, drawY4;
+						if (yanlong_shield.inInventory) {
+							drawX4 = BACKPACK_START_X + yanlong_shield.inventoryX * CELL_WIDTH;
+							drawY4 = BACKPACK_START_Y + yanlong_shield.inventoryY * CELL_HEIGHT;
+						}
+						else {
+							drawX4 = yanlong_shield.screenX;
+							drawY4 = yanlong_shield.screenY;
+						}
+
+						TransparentBlt(
+							hdc_memBuffer,
+							drawX4, drawY4,
+							yanlong_shieldDrawW, yanlong_shieldDrawW,
+							hdc_loadBmp,
+							0, 0,
+							yanlong_shieldDrawW, yanlong_shieldDrawW,
+							RGB(255, 255, 255)
+						);
+					}
+
+				}
+			}
 			for (int r = 0; r < 4; r++) {
 				for (int c = 0; c < 4; c++) {
 					// 这里可以绘制格子边框等
@@ -2655,6 +2954,179 @@ void Paint(HWND hWnd)
 				}
 			}
 		}
+
+	}
+	else if (currentStage->stageID == STAGE_2)
+	{
+		SelectObject(hdc_loadBmp, bmp_map2);
+		for (int i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
+			for (int j = 0; j < sizeof(map[0]) / sizeof(map[0][0]); j++) {
+				TransparentBlt(
+					hdc_memBuffer,
+					j * BLOCK_SIZE_X, i * BLOCK_SIZE_Y,							// 界面上起始绘制点
+					BLOCK_SIZE_X, BLOCK_SIZE_Y,									// 界面上绘制宽度高度
+					hdc_loadBmp,
+					(map[i][j] % 8) * BLOCK_BITMAP_SIZE_X,						// 位图上起始绘制点
+					(map[i][j] / 8) * BLOCK_BITMAP_SIZE_Y,
+					BLOCK_BITMAP_SIZE_X, BLOCK_BITMAP_SIZE_Y,					// 位图上绘制宽度高度
+					RGB(255, 255, 255));										// 位图上的哪个颜色会被视为背景
+			}
+		}
+		// 绘制玩家
+		SelectObject(hdc_loadBmp, player->img);
+		TransparentBlt(
+			hdc_memBuffer,
+			player->x - 0.5 * HUMAN_SIZE_X, player->y - 0.5 * HUMAN_SIZE_Y,			// 界面上起始绘制点
+			HUMAN_SIZE_X, HUMAN_SIZE_Y,											// 界面上绘制宽度高度
+			hdc_loadBmp,
+			HUMAN_BITMAP_SIZE_X* player->frame_column, HUMAN_BITMAP_SIZE_Y* player->frame_row,	// 位图上起始绘制点
+			HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+			RGB(255, 255, 255)
+		);
+		//绘制npc
+		for (int i = 0; i < npcs.size(); i++) {
+			if (npcs[i]->visible) {
+				SelectObject(hdc_loadBmp, npcs[i]->img);
+				TransparentBlt(
+					hdc_memBuffer,
+					npcs[i]->x - 0.5 * HUMAN_SIZE_X, npcs[i]->y - 0.5 * HUMAN_SIZE_Y,			// 界面上起始绘制点
+					HUMAN_SIZE_X, HUMAN_SIZE_Y,											// 界面上绘制宽度高度
+					hdc_loadBmp,
+					HUMAN_BITMAP_SIZE_X * npcs[i]->frame_column, HUMAN_BITMAP_SIZE_Y * npcs[i]->frame_row,	// 位图上起始绘制点
+					HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+					RGB(255, 255, 255)
+				);
+			}
+		}
+		//绘制血条蓝条背景框
+		SelectObject(hdc_loadBmp, bmp_hp_mp_box);
+		TransparentBlt(
+			hdc_memBuffer,
+			HP_MP_BOX_START_X, HP_MP_BOX_START_Y,    // 背景框在界面上的起始位置
+			HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // 背景框宽高
+			hdc_loadBmp,
+			0, 0,                                   // 背景框在 BMP 图上的起始位置
+			HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // BMP 图中背景框的宽高
+			RGB(255, 255, 255)                      // 背景透明色
+		);
+
+		//绘制蓝条
+		for (int i = 0; i < currentmpBlocks; ++i) {
+			SelectObject(hdc_loadBmp, bmp_mpbar);
+			TransparentBlt(
+				hdc_memBuffer,
+				MP_START_X + i * MP_BLOCK_WIDTH, // 每块横向排列
+				MP_START_Y,                           // 固定纵坐标
+				MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT, // 每块血条的宽高
+				hdc_loadBmp,
+				0, 0,
+				MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT,
+				RGB(255, 255, 255) // 背景透明色
+			);
+		}
+
+		//绘制血条
+		for (int i = 0; i < currentBloodBlocks; ++i) {
+			SelectObject(hdc_loadBmp, bmp_bloodbar);
+			TransparentBlt(
+				hdc_memBuffer,
+				BLOOD_START_X + i * BLOOD_BLOCK_WIDTH, // 每块横向排列
+				BLOOD_START_Y,                           // 固定纵坐标
+				BLOOD_BLOCK_WIDTH, BLOOD_BLOCK_HEIGHT, // 每块血条的宽高
+				hdc_loadBmp,
+				0, 0,
+				BLOOD_BLOCK_WIDTH, BLOOD_BLOCK_HEIGHT,
+				RGB(255, 255, 255) // 背景透明色
+			);
+		}
+
+		if (isBackpackOpen)
+		{
+			//绘制背包背景
+			SelectObject(hdc_loadBmp, bmp_backpack);
+			TransparentBlt(
+				hdc_memBuffer,
+				BACKPACK_START_X, BACKPACK_START_Y,    // 背景框在界面上的起始位置
+				BACKPACK_WIDTH, BACKPACK_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				BACKPACK_WIDTH, BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+			SelectObject(hdc_loadBmp, bmp_delete_box);
+			TransparentBlt(
+				hdc_memBuffer,
+				BTN_DELETE_BOX_START_X, BTN_DELETE_BOX_START_Y,    // 背景框在界面上的起始位置
+				BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+			for (const auto& item : globalBackpack) {
+				if (item.inInventory) {
+					// 选择对应的位图
+					HBITMAP itemBitmap = GetItemBitmap(item.itemID); // 自定义函数返回对应的位图
+					SelectObject(hdc_loadBmp, itemBitmap);
+
+					// 绘制物品
+					TransparentBlt(
+						hdc_memBuffer,
+						BACKPACK_START_X + item.inventoryX * CELL_WIDTH,
+						BACKPACK_START_Y + item.inventoryY * CELL_HEIGHT,
+						item.width * CELL_WIDTH,
+						item.height * CELL_HEIGHT,
+						hdc_loadBmp,
+						0, 0,
+						item.width * CELL_WIDTH,
+						item.height * CELL_HEIGHT,
+						RGB(255, 255, 255) // 背景透明色
+					);
+				}
+			}
+		}
+
+		if (!isBackpackOpen)
+		{
+			//绘制背包按钮
+			SelectObject(hdc_loadBmp, bmp_btn_backpack);
+			TransparentBlt(
+				hdc_memBuffer,
+				BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y,    // 背景框在界面上的起始位置
+				BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+		}
+		//如果正处在对话状态：绘制对话框
+		if (in_conversation) {
+			SelectObject(hdc_loadBmp, bmp_dialog);
+			TransparentBlt(
+				hdc_memBuffer,
+				0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
+				hdc_loadBmp,
+				0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+				RGB(255, 255, 255)
+			);
+			//绘制文字
+			HFONT hFont = CreateFontW(
+				20, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+				OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+				L"SimSun");		//创建字体
+			SelectObject(hdc_memBuffer, hFont);
+			SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
+			SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
+			RECT rect;
+			rect.left = 50;
+			rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
+			rect.right = WINDOW_WIDTH - 110;
+			rect.bottom = WINDOW_HEIGHT - 50;
+			DrawTextW(hdc_memBuffer, converstaion_content, -1, &rect, DT_WORDBREAK);
+		}
+
+
 
 	}
 	else if (currentStage->stageID == STAGE_3)
@@ -2920,6 +3392,165 @@ void Paint(HWND hWnd)
 				RGB(255, 255, 255)                      // 背景透明色
 			);
 		}
+		}
+	}
+	if (currentStage->stageID == STAGE_4)
+	{
+		if (isPaused)
+		{
+			SelectObject(hdc_loadBmp, bmp_pause_bg);
+			TransparentBlt(
+				hdc_memBuffer,
+				PAUSE_BG_START_X, PAUSE_BG_START_Y,    // 背景框在界面上的起始位置
+				PAUSE_BG_WIDTH, PAUSE_BG_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				PAUSE_BG_WIDTH, PAUSE_BG_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+		}
+		else
+		{
+
+			SelectObject(hdc_loadBmp, bmp_battlemap);
+			TransparentBlt(
+				hdc_memBuffer,
+				BATTLEMAP_START_X, BATTLEMAP_START_Y,    // 背景框在界面上的起始位置
+				BATTLEMAP_WIDTH, BATTLEMAP_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				BATTLEMAP_WIDTH, BATTLEMAP_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+			//绘制血条蓝条背景框
+			SelectObject(hdc_loadBmp, bmp_hp_mp_box);
+			TransparentBlt(
+				hdc_memBuffer,
+				HP_MP_BOX_START_X, HP_MP_BOX_START_Y,    // 背景框在界面上的起始位置
+				HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				HP_MP_BOX_WIDTH, HP_MP_BOX_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+
+			//绘制蓝条
+			for (int i = 0; i < currentmpBlocks; ++i) {
+				SelectObject(hdc_loadBmp, bmp_mpbar);
+				TransparentBlt(
+					hdc_memBuffer,
+					MP_START_X + i * MP_BLOCK_WIDTH, // 每块横向排列
+					MP_START_Y,                           // 固定纵坐标
+					MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT, // 每块血条的宽高
+					hdc_loadBmp,
+					0, 0,
+					MP_BLOCK_WIDTH, MP_BLOCK_HEIGHT,
+					RGB(255, 255, 255) // 背景透明色
+				);
+			}
+
+			//绘制血条
+			for (int i = 0; i < currentBloodBlocks; ++i) {
+				SelectObject(hdc_loadBmp, bmp_bloodbar);
+				TransparentBlt(
+					hdc_memBuffer,
+					BLOOD_START_X + i * BLOOD_BLOCK_WIDTH, // 每块横向排列
+					BLOOD_START_Y,                           // 固定纵坐标
+					BLOOD_BLOCK_WIDTH, BLOOD_BLOCK_HEIGHT, // 每块血条的宽高
+					hdc_loadBmp,
+					0, 0,
+					BLOOD_BLOCK_WIDTH, BLOOD_BLOCK_HEIGHT,
+					RGB(255, 255, 255) // 背景透明色
+				);
+			}
+
+			SelectObject(hdc_loadBmp, bmp_dialog);
+			TransparentBlt(
+				hdc_memBuffer,
+				0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
+				hdc_loadBmp,
+				0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+				RGB(255, 255, 255)
+			);
+
+			DrawBattleDialog(hdc_memBuffer);
+
+			if (isBackpackOpen)
+			{
+				//绘制背包背景
+				SelectObject(hdc_loadBmp, bmp_backpack);
+				TransparentBlt(
+					hdc_memBuffer,
+					BACKPACK_START_X, BACKPACK_START_Y,    // 背景框在界面上的起始位置
+					BACKPACK_WIDTH, BACKPACK_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					BACKPACK_WIDTH, BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+				SelectObject(hdc_loadBmp, bmp_delete_box);
+				TransparentBlt(
+					hdc_memBuffer,
+					BTN_DELETE_BOX_START_X, BTN_DELETE_BOX_START_Y,    // 背景框在界面上的起始位置
+					BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					BTN_DELETE_BOX_WIDTH, BTN_DELETE_BOX_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+				for (const auto& item : globalBackpack) {
+					if (item.inInventory) {
+						// 选择对应的位图
+						HBITMAP itemBitmap = GetItemBitmap(item.itemID); // 自定义函数返回对应的位图
+						SelectObject(hdc_loadBmp, itemBitmap);
+
+						// 绘制物品
+						TransparentBlt(
+							hdc_memBuffer,
+							BACKPACK_START_X + item.inventoryX * CELL_WIDTH,
+							BACKPACK_START_Y + item.inventoryY * CELL_HEIGHT,
+							item.width * CELL_WIDTH,
+							item.height * CELL_HEIGHT,
+							hdc_loadBmp,
+							0, 0,
+							item.width * CELL_WIDTH,
+							item.height * CELL_HEIGHT,
+							RGB(255, 255, 255) // 背景透明色
+						);
+					}
+				}
+			}
+
+			if (!isBackpackOpen)
+			{
+				//绘制背包按钮
+				SelectObject(hdc_loadBmp, bmp_btn_backpack);
+				TransparentBlt(
+					hdc_memBuffer,
+					BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y,    // 背景框在界面上的起始位置
+					BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					BTN_BACKPACK_WIDTH, BTN_BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+			}
+			const wchar_t* enemy_pokemon_name = L"水箭龟";
+			HFONT hFont = CreateFontW(
+				40, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+				OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+				L"Microsoft YaHei"); // 使用支持中文的字体
+			SelectObject(hdc_memBuffer, hFont);
+			SetTextColor(hdc_memBuffer, RGB(0, 0, 0)); // 设置颜色:黑色字体
+			SetBkMode(hdc_memBuffer, OPAQUE); // 设置背景模式为不透明
+			// 定义绘制区域
+			RECT rect;
+			rect.left = 670;
+			rect.top = WINDOW_HEIGHT - 630;
+			rect.right = WINDOW_WIDTH - 110;
+			rect.bottom = WINDOW_HEIGHT - 18;
+			// 绘制文本
+			DrawTextW(hdc_memBuffer, enemy_pokemon_name, -1, &rect, DT_WORDBREAK);
 		}
 	}
 

@@ -163,6 +163,7 @@
     <Image Include="resources\HP_MP_BOX.bmp" />
     <Image Include="resources\lose.bmp" />
     <Image Include="resources\map.bmp" />
+    <Image Include="resources\map2.bmp" />
     <Image Include="resources\monster1.bmp" />
     <Image Include="resources\mpbar.bmp" />
     <Image Include="resources\npc_man1.bmp" />
@@ -173,6 +174,7 @@
     <Image Include="resources\startbutton.bmp" />
     <Image Include="resources\start_background.bmp" />
     <Image Include="resources\victory.bmp" />
+    <Image Include="resources\YanLong_Shield.bmp" />
     <Image Include="small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
