@@ -35,6 +35,8 @@ HBITMAP bmp_victory;		//胜利图标
 HBITMAP bmp_lose;			//失败图标
 HBITMAP bmp_map2;			//地图砖块图像
 HBITMAP bmp_yanlong_shield;	//地图砖块图像
+HBITMAP bmp_enemy_pokemon;	//地图砖块图像
+HBITMAP bmp_mega_pokemon;	//地图砖块图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -56,6 +58,8 @@ int currentBloodBlocks = BLOOD_BLOCK_COUNT;
 int currentmpBlocks = MP_BLOCK_COUNT;
 int currentpokemonmpBlocks = POKEMON_MP_BLOCK_COUNT;
 int currentpokemonBloodBlocks = POKE_BLOOD_BLOCK_COUNT;
+int currentenemypokemonmpBlocks = ENEMY_POKEMON_MP_BLOCK_COUNT;
+int currentenemypokemonBloodBlocks = ENEMY_POKE_BLOOD_BLOCK_COUNT;
 bool isBackpackOpen = false; // 用于记录背包是否打开
 RECT backpack = { BACKPACK_START_X, BACKPACK_START_Y, BACKPACK_START_X + BACKPACK_WIDTH, BACKPACK_START_Y + BACKPACK_HEIGHT };//定义背包的尺寸
 RECT backpackButton = { BTN_BACKPACK_START_X, BTN_BACKPACK_START_Y, BTN_BACKPACK_START_X + BTN_BACKPACK_WIDTH, BTN_BACKPACK_START_Y + BTN_BACKPACK_HEIGHT };//定义背包按钮的尺寸
@@ -77,12 +81,19 @@ std::vector<BackpackItem> globalBackpack; // 全局背包数据
 bool isMyturn = true;
 bool isVictory = false;
 bool isLose = false;
+bool isVictory2 = false;
+bool isLose2 = false;
 bool isBattled = false;
+bool isBattled2 = false;
 bool isPokemonAcceptance = false;
 const wchar_t** battleDialogs = nullptr; // 动态指向当前的对话数组
 int* dialogIndex = nullptr;             // 动态指向当前对话索引
 bool isInbattle2 = false;
 bool isYanlongShieldAvailable = false; // 标志是否可以显示 yanlong_shield
+bool isEnding = false;
+size_t dialogSize = 0;
+int swordCount = 0;
+int yanlongCount = 0;
 
 Item sword1 = {
 	false, // inInventory
@@ -162,6 +173,31 @@ Item yanlong_shield = {
 	bmp_yanlong_shield  // img
 };
 
+int swordW1 = 56.25 * sword1.width;
+int swordH1 = 56.25 * sword1.height;
+int swordW2 = 56.25 * sword2.width;
+int swordH2 = 56.25 * sword2.height;
+int shieldW = 56.25 * shield.width;
+int shieldH = 56.25 * shield.height;
+int pokemonballW1 = 56.25 * pokemon_ball1.width;
+int pokemonballH1 = 56.25 * pokemon_ball1.height;
+int pokemonballW2 = 56.25 * pokemon_ball2.width;
+int pokemonballH2 = 56.25 * pokemon_ball2.height;
+int yanlongshieldW = 56.25 * yanlong_shield.width;
+int yanlongshieldH = 56.25 * yanlong_shield.height;
+
+int sword1ScreenX = sword1.inInventory ? (BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH) : sword1.screenX;
+int sword1ScreenY = sword1.inInventory ? (BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT) : sword1.screenY;
+int sword2ScreenX = sword2.inInventory ? (BACKPACK_START_X + sword2.inventoryX * CELL_WIDTH) : sword2.screenX;
+int sword2ScreenY = sword2.inInventory ? (BACKPACK_START_Y + sword2.inventoryY * CELL_HEIGHT) : sword2.screenY;
+int shieldScreenX = shield.inInventory ? (BACKPACK_START_X + shield.inventoryX * CELL_WIDTH) : shield.screenX;
+int shieldScreenY = shield.inInventory ? (BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT) : shield.screenY;
+int pokemonballScreenX1 = pokemon_ball1.inInventory ? (BACKPACK_START_X + pokemon_ball1.inventoryX * CELL_WIDTH) : pokemon_ball1.screenX;
+int pokemonballScreenY1 = pokemon_ball1.inInventory ? (BACKPACK_START_Y + pokemon_ball1.inventoryY * CELL_HEIGHT) : pokemon_ball1.screenY;
+int pokemonballScreenX2 = pokemon_ball2.inInventory ? (BACKPACK_START_X + pokemon_ball2.inventoryX * CELL_WIDTH) : pokemon_ball2.screenX;
+int pokemonballScreenY2 = pokemon_ball2.inInventory ? (BACKPACK_START_Y + pokemon_ball2.inventoryY * CELL_HEIGHT) : pokemon_ball2.screenY;
+int yanlongshieldScreenX = yanlong_shield.inInventory ? (BACKPACK_START_X + yanlong_shield.inventoryX * CELL_WIDTH) : yanlong_shield.screenX;
+int yanlongshieldScreenY = yanlong_shield.inInventory ? (BACKPACK_START_Y + yanlong_shield.inventoryY * CELL_HEIGHT) : yanlong_shield.screenY;
 
 
 //TODO 更多的全局变量
@@ -253,12 +289,22 @@ const wchar_t* battleDialogs3[] = {
 int dialogIndex3 = 0; // 当前显示的对话索引
 
 const wchar_t* battleDialogs4[] = {
-	L"你：？！我嘞个装备哥，还是pvp大佬，不过没关系，今天我便在此为民除害！…………按“X”键继续",
-	L"村长：哼哼，妄想打败我吗？就靠你那一件炎龙铠甲？招笑，就决定是你了！水箭龟！…………按“X”键继续",
+	L"你：？！我嘞个pvp大佬，不过没关系，今天我便在此为民除害！…………按“X”键继续",
+	L"村长：哼哼，妄想打败我吗？就靠你那一件炎龙铠甲？招笑，水箭龟！…………按“X”键继续",
 	L"你：不行我这装备属性被完全克制啊……难道就要到这里了吗…………按“X”键继续",
 	L"村长：唐完了小子，就这啊？也妄想为民除害？再见了！…………按“X”键继续"
 };
 int dialogIndex4 = 0; // 当前显示的对话索引
+
+const wchar_t* battleDialogs5[] = {
+	L"喷火龙：我来助你！极巨化！…………按“X”键继续",
+	L"村长：不会吧？！你是什么时候收服他的？！…………按“X”键继续",
+	L"你：看到了吧，这就是友情的力量！不是你们这些背信弃义过河拆桥的小人能理解的！…………按“X”键继续",
+	L"你：来吧！我们热血沸腾的组合技！…………按“X”键继续",
+	L"村长：不！！！…………按“X”键继续"
+};
+int dialogIndex5 = 0; // 当前显示的对话索引
+
 
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -373,35 +419,26 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int swordW1 = 56.25 * sword1.width;
-	int swordH1 = 56.25 * sword1.height;
-	int swordW2 = 56.25 * sword2.width;
-	int swordH2 = 56.25 * sword2.height;
-	int shieldW = 56.25 * shield.width;
-	int shieldH = 56.25 * shield.height;
-	int pokemonballW1 = 56.25 * pokemon_ball1.width;
-	int pokemonballH1 = 56.25 * pokemon_ball1.height;
-	int pokemonballW2 = 56.25 * pokemon_ball2.width;
-	int pokemonballH2 = 56.25 * pokemon_ball2.height;
-	int yanlongshieldW = 56.25 * yanlong_shield.width;
-	int yanlongshieldH = 56.25 * yanlong_shield.height;
-
-	int sword1ScreenX = sword1.inInventory ? (BACKPACK_START_X + sword1.inventoryX * CELL_WIDTH) : sword1.screenX;
-	int sword1ScreenY = sword1.inInventory ? (BACKPACK_START_Y + sword1.inventoryY * CELL_HEIGHT) : sword1.screenY;
-	int sword2ScreenX = sword2.inInventory ? (BACKPACK_START_X + sword2.inventoryX * CELL_WIDTH) : sword2.screenX;
-	int sword2ScreenY = sword2.inInventory ? (BACKPACK_START_Y + sword2.inventoryY * CELL_HEIGHT) : sword2.screenY;
-	int shieldScreenX = shield.inInventory ? (BACKPACK_START_X + shield.inventoryX * CELL_WIDTH) : shield.screenX;
-	int shieldScreenY = shield.inInventory ? (BACKPACK_START_Y + shield.inventoryY * CELL_HEIGHT) : shield.screenY;
-	int pokemonballScreenX1 = pokemon_ball1.inInventory ? (BACKPACK_START_X + pokemon_ball1.inventoryX * CELL_WIDTH) : pokemon_ball1.screenX;
-	int pokemonballScreenY1 = pokemon_ball1.inInventory ? (BACKPACK_START_Y + pokemon_ball1.inventoryY * CELL_HEIGHT) : pokemon_ball1.screenY;
-	int pokemonballScreenX2 = pokemon_ball2.inInventory ? (BACKPACK_START_X + pokemon_ball2.inventoryX * CELL_WIDTH) : pokemon_ball2.screenX;
-	int pokemonballScreenY2 = pokemon_ball2.inInventory ? (BACKPACK_START_Y + pokemon_ball2.inventoryY * CELL_HEIGHT) : pokemon_ball2.screenY;
-	int yanlongshieldScreenX = yanlong_shield.inInventory ? (BACKPACK_START_X + yanlong_shield.inventoryX * CELL_WIDTH) : yanlong_shield.screenX;
-	int yanlongshieldScreenY = yanlong_shield.inInventory ? (BACKPACK_START_Y + yanlong_shield.inventoryY * CELL_HEIGHT) : yanlong_shield.screenY;
-
-	if (isBattled && isVictory) {
+	if (isBattled) {
 		isYanlongShieldAvailable = true;
 	}
+	if ((isInbattle || isInbattle2) && !isVictory2)
+	{
+		swordCount = 0;
+		yanlongCount = 0;
+		for (const auto& item : globalBackpack) {
+			if (item.itemID == 1 || item.itemID == 2) {
+				swordCount++;
+			}
+		}
+		for (const auto& item : globalBackpack) {
+			if (item.itemID == 6) {
+				yanlongCount++;
+			}
+		}
+		chushihua(hWnd);
+	}
+
 	switch (message)
 	{
 	case WM_CREATE:
@@ -422,94 +459,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			isBackpackOpen = !isBackpackOpen;
 			InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
 		}
-		int swordCount = 0;
-		for (const auto& item : globalBackpack) {
-			if (item.itemID == 1 || item.itemID == 2) {
-				swordCount++;
-			}
-		}
-		switch (swordCount)
-		{
-		case 0:
-			battleDialogs = battleDialogs3;
-			dialogIndex = &dialogIndex3;
-			break;
-		case 1:
-			battleDialogs = battleDialogs2;
-			dialogIndex = &dialogIndex2;
-			break;
-		case 2:
-			battleDialogs = battleDialogs1;
-			dialogIndex = &dialogIndex1;
-			break;
-		default:
-			break;
-		}
-		size_t dialogSize = 0;
-		if (battleDialogs == battleDialogs1) {
-			dialogSize = 3;
-		}
-		else if (battleDialogs == battleDialogs2) {
-			dialogSize = 5;
-		}
-		else if (battleDialogs == battleDialogs3) {
-			dialogSize = 4;
-		}
-		if (wParam == 0x58 && isInbattle) {
-			if (*dialogIndex < dialogSize - 1) {
-				(*dialogIndex)++; // 切换到下一个对话
-				InvalidateRect(hWnd, NULL, TRUE); // 触发重绘
-			}
-			if (isPokemonAcceptance)
+		if (wParam == 0x58) {
+			if (isVictory2)
 			{
-				isBattled = true;
-				isInbattle = false;
-				InitStage(hWnd, STAGE_1);
-				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+				isInbattle2 = false;
+				isEnding = false;
+				InitStage(hWnd, STAGE_2);
+				//InvalidateRect(hWnd, NULL, TRUE); // 触发重绘
+				return 0;
 			}
 			else
 			{
-				if (isMyturn && currentmpBlocks > 0 && currentBloodBlocks > 0)
-				{
-					Sleep(2);
-					currentpokemonBloodBlocks -= (swordCount+1); // 扣血
-					if (currentpokemonBloodBlocks <= 0) {
-						currentpokemonBloodBlocks = 0;// 防止血条块数为负
-						isVictory = true;
-					}
-					currentmpBlocks -= 1; // 扣血
-					if (currentmpBlocks < 0) {
-						currentmpBlocks = 0; // 防止血条块数为负
-					}
-					isMyturn = false;
-					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
-
+				if (*dialogIndex < dialogSize - 1) {
+					(*dialogIndex)++; // 切换到下一个对话
+					InvalidateRect(hWnd, NULL, TRUE); // 触发重绘
 				}
-				else if (!isMyturn && currentpokemonmpBlocks > 0 && currentpokemonBloodBlocks > 0)
-				{
-					PokemonAttack(hWnd);
-					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
-				}
-				else if (isVictory)
-				{
-					isBattled = true;
-					isInbattle = false;
-					InitStage(hWnd, STAGE_1);
-					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
-				}
-				else if (isLose)
-				{
-					isInbattle = false;
-					ResetGame(hWnd);
-					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
-				}
+				notwhite(hWnd, swordCount, yanlongCount);
 			}
 		}
 		if (wParam == 0x55 && isInbattle)
 		{
 			if (isMyturn && currentBloodBlocks > 0 && currentmpBlocks > 0)
 			{
-				Sleep(10);
 				if (currentpokemonBloodBlocks == 1)
 				{
 					isPokemonAcceptance = true;
@@ -529,6 +500,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		// 键盘松开事件
 		KeyUp(hWnd, wParam, lParam);
+		if (wParam == 0x58)
+		{
+			if (isVictory2)
+			{
+				InitStage(hWnd, STAGE_2);
+				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+			}
+		}
 		break;
 	}
 	case WM_MOUSEMOVE:
@@ -1294,6 +1273,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				isYanlongShieldAvailable = false;
 			}
+			if (yanlong_shield.inInventory)
+			{
+				currentBloodBlocks = 3;
+				currentmpBlocks = 3;
+			}
 			InvalidateRect(hWnd, NULL, FALSE); // 刷新界面
 		}
 	case WM_TIMER:
@@ -1353,7 +1337,8 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_lose = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_LOSE));
 	bmp_map2 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MAP2));
 	bmp_yanlong_shield = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_YANLONG_SHIELD));
-
+	bmp_enemy_pokemon = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_ENEMY_POKEMON));
+	bmp_mega_pokemon = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MEGAPOKEMON));
 
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
@@ -1621,7 +1606,7 @@ void UpdateMaps(HWND hWnd)
 	{
 		InitStage(hWnd, STAGE_3);
 	}
-	if (!isInbattle)
+	if (!isInbattle && !isVictory2)
 	{
 		for (int i = 0; i < npcs.size(); i++) {
 			NPC* npc = npcs[i];
@@ -1637,6 +1622,7 @@ void UpdateMaps(HWND hWnd)
 			{
 				InitStage(hWnd, STAGE_4);
 				isInbattle2 = true;
+				isMyturn = true;
 				npc->task2_start = false;
 				npc->task1_start = false;
 				npc->task1_complete = false;
@@ -1907,7 +1893,6 @@ HBITMAP GetItemBitmap(int itemID) {
 void PokemonAttack(HWND hWnd) {
 	if (isMyturn == false)
 	{
-		Sleep(2);
 		int shieldCount = 1;
 		for (const auto& item : globalBackpack) {
 			if (item.itemID == 3) {
@@ -1936,11 +1921,16 @@ void ResetGame(HWND hWnd) {
 	// 重置敌人状态
 	currentpokemonBloodBlocks = POKE_BLOOD_BLOCK_COUNT;
 	currentpokemonmpBlocks = POKEMON_MP_BLOCK_COUNT;
-
+	currentenemypokemonBloodBlocks = POKE_BLOOD_BLOCK_COUNT;
+	currentenemypokemonmpBlocks = POKEMON_MP_BLOCK_COUNT;
+	
 	// 重置游戏逻辑状态
 	isInbattle = false;
+	isInbattle2 = false;
 	isVictory = false;
 	isLose = false;
+	isVictory2 = false;
+	isLose2 = false;
 	isMyturn = true;
 	const wchar_t* converstaion_content = nullptr;	//当前对话的内容
 
@@ -1972,6 +1962,207 @@ void DrawBattleDialog(HDC hdc) {
 	DrawTextW(hdc, currentDialog, -1, &rect, DT_WORDBREAK);
 }
 
+void notwhite(HWND hWnd, int swordCount, int yanlongCount) {
+	if (isVictory2 && !isLose2) {
+		// 清理战斗相关状态，以免再次进入对话逻辑
+		isInbattle2 = false;
+		isEnding = false;
+		isPokemonAcceptance = false;
+
+		InitStage(hWnd, STAGE_2);
+		InvalidateRect(hWnd, NULL, TRUE);
+		return; // 直接返回，避免后续对话状态被再次修改
+	}
+	else if (isInbattle)
+	{
+		if (isPokemonAcceptance)
+		{
+			isBattled = true;
+			isInbattle = false;
+			InitStage(hWnd, STAGE_1);
+		}
+		else
+		{
+			if (isMyturn && currentmpBlocks > 0 && currentBloodBlocks > 0)
+			{
+				currentpokemonBloodBlocks -= (swordCount + 1); // 扣血
+				if (currentpokemonBloodBlocks <= 0) {
+					currentpokemonBloodBlocks = 0;// 防止血条块数为负
+					isVictory = true;
+				}
+				currentmpBlocks -= 1; // 扣血
+				if (currentmpBlocks < 0) {
+					currentmpBlocks = 0; // 防止血条块数为负
+				}
+				isMyturn = false;
+				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+
+			}
+			else if (!isMyturn && currentpokemonmpBlocks > 0 && currentpokemonBloodBlocks > 0)
+			{
+				PokemonAttack(hWnd);
+				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+			}
+			else if (isVictory)
+			{
+				isBattled = true;
+				isInbattle = false;
+				InitStage(hWnd, STAGE_1);
+			}
+			else if (isLose)
+			{
+				isInbattle = false;
+				PostQuitMessage(0);
+			}
+		}
+
+	}
+	else if (isInbattle2)
+	{
+		if (isPokemonAcceptance && !isEnding && !isVictory2)
+		{
+			if (isMyturn && currentmpBlocks > 0 && currentBloodBlocks > 0)
+			{
+				currentenemypokemonBloodBlocks -= (swordCount + yanlongCount*2); // 扣血
+				if (currentenemypokemonBloodBlocks <= 0) {
+					currentenemypokemonBloodBlocks = 0;// 防止血条块数为负
+					isVictory2 = true;
+				}
+				currentmpBlocks -= 1; // 扣血
+				if (currentmpBlocks < 0) {
+					currentmpBlocks = 0; // 防止血条块数为负
+				}
+				isMyturn = false;
+				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+
+			}
+			else if (!isMyturn && currentenemypokemonmpBlocks > 0 && currentenemypokemonBloodBlocks > 0)
+			{
+				int shieldCount = 1;
+				for (const auto& item : globalBackpack) {
+					if (item.itemID == 3) {
+						shieldCount++;
+					}
+				}
+				shieldCount = shieldCount - 1;
+				currentBloodBlocks -= (5 - shieldCount - yanlongCount*2); // 扣血
+				if (currentBloodBlocks <= 0) {
+					currentBloodBlocks = 0; // 防止血条块数为负
+					isEnding = true;
+					currentBloodBlocks = 3;
+					currentmpBlocks = 0;
+					currentenemypokemonmpBlocks = 0;
+					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+				}
+				currentenemypokemonmpBlocks -= 1; // 扣血
+				if (currentmpBlocks < 0) {
+					currentmpBlocks = 0; // 防止血条块数为负
+				}
+				isMyturn = true;
+				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+			}
+		}
+		else if(!isPokemonAcceptance && !isEnding && !isVictory2 && !isLose2)
+		{
+			if (isMyturn && currentmpBlocks > 0 && currentBloodBlocks > 0)
+			{
+				currentenemypokemonBloodBlocks -= (swordCount + yanlongCount * 2 - 1); // 扣血
+				if (currentenemypokemonBloodBlocks <= 0) {
+					currentenemypokemonBloodBlocks = 0;// 防止血条块数为负
+					isVictory2 = true;
+				}
+				currentmpBlocks -= 1; // 扣血
+				if (currentmpBlocks < 0) {
+					currentmpBlocks = 0; // 防止血条块数为负
+				}
+				isMyturn = false;
+				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+			}
+			else if (!isMyturn && currentenemypokemonmpBlocks > 0 && currentenemypokemonBloodBlocks > 0)
+			{
+				int shieldCount = 1;
+				for (const auto& item : globalBackpack) {
+					if (item.itemID == 3) {
+						shieldCount++;
+					}
+				}
+				shieldCount = shieldCount - 1;
+				currentBloodBlocks -= (5 - shieldCount - yanlongCount * 2); // 扣血
+				if (currentBloodBlocks <= 0) {
+					currentBloodBlocks = 0; // 防止血条块数为负
+					isLose2 = true;
+				}
+				currentenemypokemonmpBlocks -= 1; // 扣血
+				if (currentenemypokemonmpBlocks < 0) {
+					currentenemypokemonmpBlocks = 0; // 防止血条块数为负
+				}
+				isMyturn = true;
+				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+			}
+
+		}
+		else if(isEnding && !isVictory2)
+		{
+			if ((*dialogIndex) == dialogSize - 1)
+			{
+				currentenemypokemonBloodBlocks = 0;
+				isVictory2 = true;
+				isEnding = false;
+				InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
+			}
+		}
+		else if (isLose2 && !isVictory2)
+		{
+			PostQuitMessage(0);
+		}
+	}
+}
+
+void chushihua(HWND hWnd) {
+	if (isEnding || isVictory2)
+	{
+		battleDialogs = battleDialogs5;
+		dialogIndex = &dialogIndex5;
+	}
+	else
+	{
+		if (swordCount == 0)
+		{
+			battleDialogs = battleDialogs3;
+			dialogIndex = &dialogIndex3;
+		}
+		else if (swordCount == 1)
+		{
+			battleDialogs = battleDialogs2;
+			dialogIndex = &dialogIndex2;
+		}
+		else if (swordCount == 2)
+		{
+			battleDialogs = battleDialogs1;
+			dialogIndex = &dialogIndex1;
+		}
+		if (yanlongCount == 1)
+		{
+			battleDialogs = battleDialogs4;
+			dialogIndex = &dialogIndex4;
+		}
+	}
+	if (battleDialogs == battleDialogs1) {
+		dialogSize = 3;
+	}
+	else if (battleDialogs == battleDialogs2) {
+		dialogSize = 5;
+	}
+	else if (battleDialogs == battleDialogs3) {
+		dialogSize = 4;
+	}
+	else if (battleDialogs == battleDialogs4) {
+		dialogSize = 4;
+	}
+	else if (battleDialogs == battleDialogs5) {
+		dialogSize = 5;
+	}
+}
 
 //TODO: 添加游戏需要的更多函数
 
@@ -3127,7 +3318,6 @@ void Paint(HWND hWnd)
 		}
 
 
-
 	}
 	else if (currentStage->stageID == STAGE_3)
 	{
@@ -3394,7 +3584,7 @@ void Paint(HWND hWnd)
 		}
 		}
 	}
-	if (currentStage->stageID == STAGE_4)
+	else if (currentStage->stageID == STAGE_4)
 	{
 		if (isPaused)
 		{
@@ -3463,7 +3653,20 @@ void Paint(HWND hWnd)
 					RGB(255, 255, 255) // 背景透明色
 				);
 			}
+			if (isEnding || isVictory2)
+			{
+				SelectObject(hdc_loadBmp, bmp_mega_pokemon);
+				TransparentBlt(
+					hdc_memBuffer,
+					100, 300,    // 背景框在界面上的起始位置
+					300, 300,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					300, 300,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
 
+			}
 			SelectObject(hdc_loadBmp, bmp_dialog);
 			TransparentBlt(
 				hdc_memBuffer,
@@ -3551,8 +3754,109 @@ void Paint(HWND hWnd)
 			rect.bottom = WINDOW_HEIGHT - 18;
 			// 绘制文本
 			DrawTextW(hdc_memBuffer, enemy_pokemon_name, -1, &rect, DT_WORDBREAK);
+
+			//绘制背包背景
+			SelectObject(hdc_loadBmp, bmp_enemy_pokemon);
+			TransparentBlt(
+				hdc_memBuffer,
+				450, 150,    // 背景框在界面上的起始位置
+				256, 256,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				256, 256,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+
+			//绘制蓝条
+			for (int i = 0; i < currentenemypokemonmpBlocks; ++i) {
+				SelectObject(hdc_loadBmp, bmp_mpbar);
+				TransparentBlt(
+					hdc_memBuffer,
+					550 + i * POKEMON_MP_BLOCK_WIDTH, // 每块横向排列
+					150,                           // 固定纵坐标
+					POKEMON_MP_BLOCK_WIDTH, POKEMON_MP_BLOCK_HEIGHT, // 每块血条的宽高
+					hdc_loadBmp,
+					0, 0,
+					POKEMON_MP_BLOCK_WIDTH, POKEMON_MP_BLOCK_HEIGHT,
+					RGB(255, 255, 255) // 背景透明色
+				);
+			}
+
+			//绘制血条
+			for (int i = 0; i < currentenemypokemonBloodBlocks; ++i) {
+				SelectObject(hdc_loadBmp, bmp_bloodbar);
+				TransparentBlt(
+					hdc_memBuffer,
+					550 + i * POKE_BLOOD_BLOCK_WIDTH, // 每块横向排列
+					POKE_BLOOD_START_Y,                           // 固定纵坐标
+					POKE_BLOOD_BLOCK_WIDTH, POKE_BLOOD_BLOCK_HEIGHT, // 每块血条的宽高
+					hdc_loadBmp,
+					0, 0,
+					POKE_BLOOD_BLOCK_WIDTH, POKE_BLOOD_BLOCK_HEIGHT,
+					RGB(255, 255, 255) // 背景透明色
+				);
+			}
+
+			SelectObject(hdc_loadBmp, bmp_backpack);
+			TransparentBlt(
+				hdc_memBuffer,
+				BATTLE_BACKPACK_START_X, BATTLE_BACKPACK_START_Y,    // 背景框在界面上的起始位置
+				BACKPACK_WIDTH, BACKPACK_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				BACKPACK_WIDTH, BACKPACK_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+			SelectObject(hdc_loadBmp, bmp_sword);
+			TransparentBlt(
+				hdc_memBuffer,
+				735, 150,    // 背景框在界面上的起始位置
+				SWORD_WIDTH, SWORD_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				SWORD_WIDTH, SWORD_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+			SelectObject(hdc_loadBmp, bmp_yanlong_shield);
+			TransparentBlt(
+				hdc_memBuffer,
+				785, 150,    // 背景框在界面上的起始位置
+				112.5, 112.5,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				112.5, 112.5,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+			if (isLose2)
+			{
+				SelectObject(hdc_loadBmp, bmp_lose);
+				TransparentBlt(
+					hdc_memBuffer,
+					LOSE_START_X, LOSE_START_Y,    // 背景框在界面上的起始位置
+					LOSE_WIDTH, LOSE_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					LOSE_WIDTH, LOSE_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+
+			}
+			else if (isVictory2)
+			{
+				SelectObject(hdc_loadBmp, bmp_victory);
+				TransparentBlt(
+					hdc_memBuffer,
+					VICTORY_START_X, VICTORY_START_Y,    // 背景框在界面上的起始位置
+					VICTORY_WIDTH, VICTORY_HEIGHT,      // 背景框宽高
+					hdc_loadBmp,
+					0, 0,                                   // 背景框在 BMP 图上的起始位置
+					VICTORY_WIDTH, VICTORY_HEIGHT,      // BMP 图中背景框的宽高
+					RGB(255, 255, 255)                      // 背景透明色
+				);
+			}
 		}
-	}
+		}
+
 
 	// 绘制按钮到缓存
 	for (int i = 0; i < buttons.size(); i++)

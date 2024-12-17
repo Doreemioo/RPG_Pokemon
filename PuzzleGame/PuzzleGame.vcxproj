@@ -160,10 +160,12 @@
     <Image Include="resources\btn_backpack.bmp" />
     <Image Include="resources\delete_box.bmp" />
     <Image Include="resources\dialog.bmp" />
+    <Image Include="resources\enemy_pokemon.bmp" />
     <Image Include="resources\HP_MP_BOX.bmp" />
     <Image Include="resources\lose.bmp" />
     <Image Include="resources\map.bmp" />
     <Image Include="resources\map2.bmp" />
+    <Image Include="resources\mega_pokemon.bmp" />
     <Image Include="resources\monster1.bmp" />
     <Image Include="resources\mpbar.bmp" />
     <Image Include="resources\npc_man1.bmp" />

@@ -133,6 +133,8 @@ using namespace std;
 #define LOSE_START_Y			250
 #define POKEMON_BALLACC_START_X	600
 #define POKEMON_BALLACC_START_Y	330
+#define ENEMY_POKEMON_MP_BLOCK_COUNT	3
+#define ENEMY_POKE_BLOOD_BLOCK_COUNT	7
 
 
 
@@ -372,6 +374,13 @@ void PokemonAttack(HWND hWnd);
 void ResetGame(HWND hWnd);
 
 void DrawBattleDialog(HDC hdc);
+
+void notwhite(HWND hWnd, int swordCount, int yanlongCount);
+
+void chushihua(HWND hWnd);
+
+void messageloop(HWND hWnd);
+
 #pragma region 其它游戏状态处理函数声明
 
 // 添加按钮函数
