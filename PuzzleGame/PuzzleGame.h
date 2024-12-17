@@ -30,6 +30,7 @@ using namespace std;
 #define STAGE_2					2
 #define STAGE_3					3
 #define STAGE_4					4
+#define STAGE_HELP				5
 
 //³ß´ç
 #define BG_BITMAP_WIDTH			960		//±³¾°Í¼Æ¬µÄÎ»Í¼¿í¶È
@@ -85,10 +86,10 @@ using namespace std;
 #define BTN_DELETE_BOX_HEIGHT	25
 #define BTN_DELETE_BOX_START_X	225
 #define BTN_DELETE_BOX_START_Y	410
-#define PAUSE_BG_WIDTH			480
-#define PAUSE_BG_HEIGHT			320
-#define PAUSE_BG_START_X		240
-#define PAUSE_BG_START_Y		160
+#define PAUSE_BG_WIDTH			960
+#define PAUSE_BG_HEIGHT			640
+#define PAUSE_BG_START_X		0
+#define PAUSE_BG_START_Y		0
 #define SWORD_WIDTH				56.25
 #define SWORD_HEIGHT			168.75
 #define SWORD_START_X			200
@@ -135,6 +136,10 @@ using namespace std;
 #define POKEMON_BALLACC_START_Y	330
 #define ENEMY_POKEMON_MP_BLOCK_COUNT	3
 #define ENEMY_POKE_BLOOD_BLOCK_COUNT	7
+#define HELP_BITMAP_WIDTH		960		//±³¾°Í¼Æ¬µÄÎ»Í¼¿í¶È
+#define HELP_BITMAP_HEIGHT		640		//±³¾°Í¼Æ¬µÄÎ»Í¼¸ß¶È
+#define HELP_START_X			-30
+#define HELP_START_Y			0
 
 
 

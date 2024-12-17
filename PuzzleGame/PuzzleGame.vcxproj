@@ -161,6 +161,7 @@
     <Image Include="resources\delete_box.bmp" />
     <Image Include="resources\dialog.bmp" />
     <Image Include="resources\enemy_pokemon.bmp" />
+    <Image Include="resources\help.bmp" />
     <Image Include="resources\HP_MP_BOX.bmp" />
     <Image Include="resources\lose.bmp" />
     <Image Include="resources\map.bmp" />

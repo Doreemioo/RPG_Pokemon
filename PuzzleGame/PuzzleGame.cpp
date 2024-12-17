@@ -37,6 +37,7 @@ HBITMAP bmp_map2;			//地图砖块图像
 HBITMAP bmp_yanlong_shield;	//地图砖块图像
 HBITMAP bmp_enemy_pokemon;	//地图砖块图像
 HBITMAP bmp_mega_pokemon;	//地图砖块图像
+HBITMAP bmp_help;			//帮助图像
 
 Stage* currentStage = NULL; //当前场景状态
 vector<NPC*> npcs;			//NPC列表
@@ -94,6 +95,11 @@ bool isEnding = false;
 size_t dialogSize = 0;
 int swordCount = 0;
 int yanlongCount = 0;
+int prevstageid = -1;
+bool ifzhidao1 = true;
+bool ifzhidao2 = false;
+bool ifzhidao3 = true;
+
 
 Item sword1 = {
 	false, // inInventory
@@ -266,7 +272,7 @@ int map[20][28] = { 0 };	//存储当前关卡的地图
 // TODO: 在此添加其它全局变量
 const wchar_t* battleDialogs1[] = {
 	L"你：喷火龙！我记得你！村民们都把你当守护神，你为什么要伤害他们？之前村民们对你不好吗？吃我一击！…………按“X”键继续",
-	L"喷火龙：你还不是一样！村民们把我当守护神，你却装备着两把剑一面盾攻击我！少废话！我早就看透你们了！看招！…………按“X”键继续",
+	L"喷火龙：你还不是一样！村民们把我当守护神，你却装备着两把大剑攻击我！少废话！我早就看透你们了！看招！…………按“X”键继续",
 	L"你：我只是不忍心看你再堕落下去了，你既然已经对村民出手，那我也无需留情，再见吧！…………按“X”键继续"
 };
 int dialogIndex1 = 0; // 当前显示的对话索引
@@ -453,6 +459,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		KeyDown(hWnd, wParam, lParam);
 		if (wParam == VK_ESCAPE) { // 判断是否按下 ESC 键
 			isPaused = !isPaused; // 切换暂停状态
+			prevstageid = currentStage->stageID;
 			InvalidateRect(hWnd, NULL, TRUE); // 触发重绘
 		}
 		if (wParam == 0x42) { // 假设按 B 键开关背包
@@ -493,6 +500,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					InvalidateRect(hWnd, NULL, FALSE); // 触发重绘
 				}
 			}
+		}
+		if (wParam == 0x5A)
+		{
+			if (ifzhidao1)
+			{
+				ifzhidao1 = false;
+			}
+			ifzhidao2 = !ifzhidao2;
+		}
+		if (wParam == 0x51 && isVictory2)
+		{
+			PostQuitMessage(0);
 		}
 		break;
 	}
@@ -715,12 +734,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			isBackpackOpen = !isBackpackOpen;
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
-		else if (isPaused && x >= 390 && x <= 570 && y >= 280 && y <= 365) {
+		else if (isPaused && x >= 350 && x <= 610 && y >= 245 && y <= 355) {
 			isPaused = !isPaused;
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
-		else if (isPaused && x >= 390 && x <= 570 && y >= 385 && y <= 460) {
+		else if (isPaused && x >= 350 && x <= 610 && y >= 375 && y <= 465) {
+			InitStage(hWnd, STAGE_HELP);
+			isPaused = false;
+			InvalidateRect(hWnd, NULL, FALSE);
+		}
+		else if (isPaused && x >= 390 && x <= 570 && y >= 465 && y <= 555) {
 			PostQuitMessage(0);
+		}
+		else if (currentStage->stageID == STAGE_STARTMENU && x >= 363 && x <= 597 && y >= 492 && y <= 576) {
+			InitStage(hWnd, STAGE_HELP);
+			prevstageid = STAGE_STARTMENU;
+			InvalidateRect(hWnd, NULL, FALSE);
+		}
+		else if (currentStage->stageID == STAGE_HELP && x >= 358 && x <= 602 && y >= 534 && y <= 581)
+		{
+			if (prevstageid != -1)
+			{
+				InitStage(hWnd, prevstageid);
+				prevstageid = -1;
+			}
+			else
+			{
+				InitStage(hWnd, STAGE_1);
+			}
 		}
 		break;
 	}
@@ -1339,6 +1380,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_yanlong_shield = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_YANLONG_SHIELD));
 	bmp_enemy_pokemon = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_ENEMY_POKEMON));
 	bmp_mega_pokemon = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_MEGAPOKEMON));
+	bmp_help = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_HELP));
 
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
@@ -1550,38 +1592,77 @@ void UpdatePokemons(HWND hWnd) {
 		pokemons[i]->frame_id++;
 		pokemons[i]->frame_id = pokemons[i]->frame_id % pokemons[i]->frame_count; // 环绕回到0
 		pokemons[i]->frame_column = pokemons[i]->frame_sequence[pokemons[i]->frame_id];
-		if (pokemons[i]->moving) {
-			// 更新位置
-			pokemons[i]->x += pokemons[i]->vx;
-			pokemons[i]->y += pokemons[i]->vy;
+		if (!isVictory2)
+		{
+			if (pokemons[i]->moving) {
+				// 更新位置
+				pokemons[i]->x += pokemons[i]->vx;
+				pokemons[i]->y += pokemons[i]->vy;
 
-			// 检查边界，防止超出范围
-			if (pokemons[i]->x < 672) {
-				pokemons[i]->x = 672; // 调整位置到边界内
-				pokemons[i]->vx = -pokemons[i]->vx; // 反转水平速度
-			}
-			if (pokemons[i]->x > 832) {
-				pokemons[i]->x = 832;
-				pokemons[i]->vx = -pokemons[i]->vx;
-			}
-			if (pokemons[i]->y < 416) {
-				pokemons[i]->y = 416;
-				pokemons[i]->vy = -pokemons[i]->vy; // 反转垂直速度
-			}
-			if (pokemons[i]->y > 576) {
-				pokemons[i]->y = 576;
-				pokemons[i]->vy = -pokemons[i]->vy;
-			}
+				// 检查边界，防止超出范围
+				if (pokemons[i]->x < 672) {
+					pokemons[i]->x = 672; // 调整位置到边界内
+					pokemons[i]->vx = -pokemons[i]->vx; // 反转水平速度
+				}
+				if (pokemons[i]->x > 832) {
+					pokemons[i]->x = 832;
+					pokemons[i]->vx = -pokemons[i]->vx;
+				}
+				if (pokemons[i]->y < 416) {
+					pokemons[i]->y = 416;
+					pokemons[i]->vy = -pokemons[i]->vy; // 反转垂直速度
+				}
+				if (pokemons[i]->y > 576) {
+					pokemons[i]->y = 576;
+					pokemons[i]->vy = -pokemons[i]->vy;
+				}
 
-			// 减少停顿时间，直到停止运动
-			pokemons[i]->waitTime--;
-			if (pokemons[i]->waitTime <= 0) {
-				pokemons[i]->moving = false;
+				// 减少停顿时间，直到停止运动
+				pokemons[i]->waitTime--;
+				if (pokemons[i]->waitTime <= 0) {
+					pokemons[i]->moving = false;
+				}
+			}
+			else {
+				// 随机化运动参数，准备下一次运动
+				RandomizePokemonMovement(pokemons[i]);
 			}
 		}
-		else {
-			// 随机化运动参数，准备下一次运动
-			RandomizePokemonMovement(pokemons[i]);
+		else if (isVictory2)
+		{
+			if (pokemons[i]->moving) {
+				// 更新位置
+				pokemons[i]->x += pokemons[i]->vx;
+				pokemons[i]->y += pokemons[i]->vy;
+
+				// 检查边界，防止超出范围
+				if (pokemons[i]->x < 200) {
+					pokemons[i]->x = 200; // 调整位置到边界内
+					pokemons[i]->vx = -pokemons[i]->vx; // 反转水平速度
+				}
+				if (pokemons[i]->x > 400) {
+					pokemons[i]->x = 400;
+					pokemons[i]->vx = -pokemons[i]->vx;
+				}
+				if (pokemons[i]->y < 200) {
+					pokemons[i]->y = 200;
+					pokemons[i]->vy = -pokemons[i]->vy; // 反转垂直速度
+				}
+				if (pokemons[i]->y > 300) {
+					pokemons[i]->y = 300;
+					pokemons[i]->vy = -pokemons[i]->vy;
+				}
+
+				// 减少停顿时间，直到停止运动
+				pokemons[i]->waitTime--;
+				if (pokemons[i]->waitTime <= 0) {
+					pokemons[i]->moving = false;
+				}
+			}
+			else {
+				// 随机化运动参数，准备下一次运动
+				RandomizePokemonMovement(pokemons[i]);
+			}
 		}
 	}
 }
@@ -1721,32 +1802,33 @@ void HandleConversationEvents(HWND hWnd)
 void CheckCollision() {
 	for (int i = 0; i < npcs.size(); i++) {
 		NPC* npc = npcs[i];
-
 		// 判断玩家和 NPC 是否重叠
 		bool horizontalOverlap = (player->x < npc->x + HUMAN_SIZE_X) && (player->x + HUMAN_SIZE_X > npc->x);
 		bool verticalOverlap = (player->y < npc->y + HUMAN_SIZE_Y - 10) && (player->y + HUMAN_SIZE_Y > npc->y);
-
-		// 如果发生重叠，根据玩家的移动方向修正位置
-		if (horizontalOverlap && verticalOverlap) {
-			switch (player->direction) {
-			case UNIT_DIRECT_LEFT:
-				player->x = npc->x + HUMAN_SIZE_X + 1; // 偏移 1 像素，避免再次触发碰撞
-				break;
-			case UNIT_DIRECT_UP:
-				player->y = npc->y + HUMAN_SIZE_Y - 7; // 偏移 1 像素
-				break;
-			case UNIT_DIRECT_RIGHT:
-				player->x = npc->x - HUMAN_SIZE_X - 1; // 偏移 1 像素
-				break;
-			case UNIT_DIRECT_DOWN:
-				player->y = npc->y - HUMAN_SIZE_Y - 1; // 偏移 1 像素
-				break;
-			default:
-				break;
+		if (!isVictory2)
+		{
+			if (horizontalOverlap && verticalOverlap) {
+				switch (player->direction) {
+				case UNIT_DIRECT_LEFT:
+					player->x = npc->x + HUMAN_SIZE_X + 1; // 偏移 1 像素，避免再次触发碰撞
+					break;
+				case UNIT_DIRECT_UP:
+					player->y = npc->y + HUMAN_SIZE_Y - 7; // 偏移 1 像素
+					break;
+				case UNIT_DIRECT_RIGHT:
+					player->x = npc->x - HUMAN_SIZE_X - 1; // 偏移 1 像素
+					break;
+				case UNIT_DIRECT_DOWN:
+					player->y = npc->y - HUMAN_SIZE_Y - 1; // 偏移 1 像素
+					break;
+				default:
+					break;
+				}
 			}
 		}
+		// 如果发生重叠，根据玩家的移动方向修正位置
 	}
-	if (!isBattled)
+	if (!isBattled || isVictory2)
 	{
 		for (int i = 0; i < pokemons.size(); i++) {
 			Pokemon* pokemon = pokemons[i];
@@ -2164,6 +2246,117 @@ void chushihua(HWND hWnd) {
 	}
 }
 
+void zhidao(HWND hWnd, HDC hdc_loadBmp, HDC hdc_memBuffer) {
+	if (ifzhidao1)
+	{
+		const wchar_t* content = L"欢迎来到宝可梦：背包乱斗！先去找村长看看吧！…………按Z继续";
+		SelectObject(hdc_loadBmp, bmp_dialog);
+		TransparentBlt(
+			hdc_memBuffer,
+			0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
+			hdc_loadBmp,
+			0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+			RGB(255, 255, 255)
+		);
+		//绘制文字
+		HFONT hFont = CreateFontW(
+			25, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+			OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+			L"Microsoft Yahei");		//创建字体
+		SelectObject(hdc_memBuffer, hFont);
+		SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
+		SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
+		RECT rect;
+		rect.left = 50;
+		rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
+		rect.right = WINDOW_WIDTH - 110;
+		rect.bottom = WINDOW_HEIGHT - 50;
+		DrawTextW(hdc_memBuffer, content, -1, &rect, DT_WORDBREAK);
+	}
+	else if (show_reward_popup)
+	{
+		const wchar_t* content = L"获得奖励：大剑*2（攻击+1），盾牌*1（防御+1），精灵球*2（宝可梦血量为1时可收服宝可梦）请将屏幕上所有道具收入背包并关闭背包";
+		SelectObject(hdc_loadBmp, bmp_dialog);
+		TransparentBlt(
+			hdc_memBuffer,
+			0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
+			hdc_loadBmp,
+			0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+			RGB(255, 255, 255)
+		);
+		//绘制文字
+		HFONT hFont = CreateFontW(
+			25, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+			OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+			L"Microsoft Yahei");		//创建字体
+		SelectObject(hdc_memBuffer, hFont);
+		SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
+		SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
+		RECT rect;
+		rect.left = 50;
+		rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
+		rect.right = WINDOW_WIDTH - 110;
+		rect.bottom = WINDOW_HEIGHT - 50;
+		DrawTextW(hdc_memBuffer, content, -1, &rect, DT_WORDBREAK);
+
+	}
+	else if (isYanlongShieldAvailable && ifzhidao2)
+	{
+		const wchar_t* content = L"击败喷火龙！获得奖励：炎龙铠甲*1，效果：满血满蓝！攻击+2，请收入背包并关闭背包…………按Z继续";
+		SelectObject(hdc_loadBmp, bmp_dialog);
+		TransparentBlt(
+			hdc_memBuffer,
+			0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
+			hdc_loadBmp,
+			0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+			RGB(255, 255, 255)
+		);
+		//绘制文字
+		HFONT hFont = CreateFontW(
+			25, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+			OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+			L"Microsoft Yahei");		//创建字体
+		SelectObject(hdc_memBuffer, hFont);
+		SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
+		SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
+		RECT rect;
+		rect.left = 50;
+		rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
+		rect.right = WINDOW_WIDTH - 110;
+		rect.bottom = WINDOW_HEIGHT - 50;
+		DrawTextW(hdc_memBuffer, content, -1, &rect, DT_WORDBREAK);
+
+	}
+	else if (ifzhidao3 && isVictory2)
+	{
+		const wchar_t* content = L"恭喜你！完成了所有的主线剧情！解锁了完美结局！感谢游玩！按Q退出游戏";
+		SelectObject(hdc_loadBmp, bmp_dialog);
+		TransparentBlt(
+			hdc_memBuffer,
+			0, WINDOW_HEIGHT - DIALOG_SIZE_Y - 38, WINDOW_WIDTH - 16, DIALOG_SIZE_Y,					// 界面上绘制位置
+			hdc_loadBmp,
+			0, 0, DIALOG_BITMAP_SIZE_X, DIALOG_BITMAP_SIZE_Y,	// 位图上绘制位置
+			RGB(255, 255, 255)
+		);
+		//绘制文字
+		HFONT hFont = CreateFontW(
+			25, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+			OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+			L"Microsoft Yahei");		//创建字体
+		SelectObject(hdc_memBuffer, hFont);
+		SetTextColor(hdc_memBuffer, RGB(0, 0, 0));	// 设置颜色:黑色字体白色背景
+		SetBkColor(hdc_memBuffer, RGB(255, 255, 255));
+		RECT rect;
+		rect.left = 50;
+		rect.top = WINDOW_HEIGHT - DIALOG_SIZE_Y - 18;
+		rect.right = WINDOW_WIDTH - 110;
+		rect.bottom = WINDOW_HEIGHT - 50;
+		DrawTextW(hdc_memBuffer, content, -1, &rect, DT_WORDBREAK);
+
+	}
+
+}
+
 //TODO: 添加游戏需要的更多函数
 
 // 添加按钮函数
@@ -2430,6 +2623,23 @@ void InitStage(HWND hWnd, int stageID)
 			else
 				monster->visible = false;
 		}
+		//宝可梦的可见性
+		for (int i = 0; i < pokemons.size(); i++)
+		{
+			Pokemon* pokemon = pokemons[i];
+			if (true) //TODO：加载游戏界面需要的按钮
+				pokemon->visible = true;
+			else
+				pokemon->visible = false;
+		}
+	}
+	else if (stageID == STAGE_HELP)
+	{
+		for (int i = 0; i < buttons.size(); i++)
+		{
+			Button* button = buttons[i];
+			button->visible = false;
+		}
 	}
 
 	//刷新显示
@@ -2595,6 +2805,8 @@ void Paint(HWND hWnd)
 					RGB(255, 255, 255) // 背景透明色
 				);
 			}
+
+			zhidao(hWnd, hdc_loadBmp, hdc_memBuffer);
 
 			if (isBackpackOpen)
 			{
@@ -3149,6 +3361,20 @@ void Paint(HWND hWnd)
 	}
 	else if (currentStage->stageID == STAGE_2)
 	{
+		if (isPaused)
+		{
+			SelectObject(hdc_loadBmp, bmp_pause_bg);
+			TransparentBlt(
+				hdc_memBuffer,
+				PAUSE_BG_START_X, PAUSE_BG_START_Y,    // 背景框在界面上的起始位置
+				PAUSE_BG_WIDTH, PAUSE_BG_HEIGHT,      // 背景框宽高
+				hdc_loadBmp,
+				0, 0,                                   // 背景框在 BMP 图上的起始位置
+				PAUSE_BG_WIDTH, PAUSE_BG_HEIGHT,      // BMP 图中背景框的宽高
+				RGB(255, 255, 255)                      // 背景透明色
+			);
+		}
+
 		SelectObject(hdc_loadBmp, bmp_map2);
 		for (int i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
 			for (int j = 0; j < sizeof(map[0]) / sizeof(map[0][0]); j++) {
@@ -3174,21 +3400,42 @@ void Paint(HWND hWnd)
 			HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
 			RGB(255, 255, 255)
 		);
-		//绘制npc
-		for (int i = 0; i < npcs.size(); i++) {
-			if (npcs[i]->visible) {
-				SelectObject(hdc_loadBmp, npcs[i]->img);
-				TransparentBlt(
-					hdc_memBuffer,
-					npcs[i]->x - 0.5 * HUMAN_SIZE_X, npcs[i]->y - 0.5 * HUMAN_SIZE_Y,			// 界面上起始绘制点
-					HUMAN_SIZE_X, HUMAN_SIZE_Y,											// 界面上绘制宽度高度
-					hdc_loadBmp,
-					HUMAN_BITMAP_SIZE_X * npcs[i]->frame_column, HUMAN_BITMAP_SIZE_Y * npcs[i]->frame_row,	// 位图上起始绘制点
-					HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
-					RGB(255, 255, 255)
-				);
+		if (!isVictory2) {
+			//绘制npc
+			for (int i = 0; i < npcs.size(); i++) {
+				if (npcs[i]->visible) {
+					SelectObject(hdc_loadBmp, npcs[i]->img);
+					TransparentBlt(
+						hdc_memBuffer,
+						npcs[i]->x - 0.5 * HUMAN_SIZE_X, npcs[i]->y - 0.5 * HUMAN_SIZE_Y,			// 界面上起始绘制点
+						HUMAN_SIZE_X, HUMAN_SIZE_Y,											// 界面上绘制宽度高度
+						hdc_loadBmp,
+						HUMAN_BITMAP_SIZE_X * npcs[i]->frame_column, HUMAN_BITMAP_SIZE_Y * npcs[i]->frame_row,	// 位图上起始绘制点
+						HUMAN_BITMAP_SIZE_X, HUMAN_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+						RGB(255, 255, 255)
+					);
+				}
 			}
 		}
+		if (isVictory2)
+		{
+			//绘制宝可梦
+			for (int i = 0; i < pokemons.size(); i++) {
+				if (pokemons[i]->visible) {
+					SelectObject(hdc_loadBmp, pokemons[i]->img);
+					TransparentBlt(
+						hdc_memBuffer,
+						pokemons[i]->x - 0.5 * POKEMON_SIZE_X, pokemons[i]->y - 0.5 * POKEMON_SIZE_Y,		// 界面上起始绘制点
+						POKEMON_SIZE_X, POKEMON_SIZE_Y,											// 界面上绘制宽度高度
+						hdc_loadBmp,
+						POKEMON_BITMAP_SIZE_X * pokemons[i]->frame_column, POKEMON_BITMAP_SIZE_Y * pokemons[i]->frame_row,	// 位图上起始绘制点
+						POKEMON_BITMAP_SIZE_X, POKEMON_BITMAP_SIZE_Y,											// 位图上绘制宽度高度
+						RGB(255, 255, 255)
+					);
+				}
+			}
+		}
+
 		//绘制血条蓝条背景框
 		SelectObject(hdc_loadBmp, bmp_hp_mp_box);
 		TransparentBlt(
@@ -3230,7 +3477,7 @@ void Paint(HWND hWnd)
 				RGB(255, 255, 255) // 背景透明色
 			);
 		}
-
+		zhidao(hWnd, hdc_loadBmp, hdc_memBuffer);
 		if (isBackpackOpen)
 		{
 			//绘制背包背景
@@ -3856,7 +4103,20 @@ void Paint(HWND hWnd)
 			}
 		}
 		}
+	else if (currentStage->stageID == STAGE_HELP)
+	{
+		SelectObject(hdc_loadBmp, bmp_help);
+		TransparentBlt(
+			hdc_memBuffer,
+			HELP_START_X, HELP_START_Y,    // 背景框在界面上的起始位置
+			HELP_BITMAP_WIDTH,HELP_BITMAP_HEIGHT,      // 背景框宽高
+			hdc_loadBmp,
+			0, 0,                                   // 背景框在 BMP 图上的起始位置
+			HELP_BITMAP_WIDTH, HELP_BITMAP_HEIGHT,      // BMP 图中背景框的宽高
+			RGB(255, 255, 255)                      // 背景透明色
+		);
 
+	}
 
 	// 绘制按钮到缓存
 	for (int i = 0; i < buttons.size(); i++)
