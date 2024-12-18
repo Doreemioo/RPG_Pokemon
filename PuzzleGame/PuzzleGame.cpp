@@ -222,8 +222,8 @@ int FRAMES_WALK_COUNT = sizeof(FRAMES_WALK) / sizeof(int);
 //地图
 //0空地 1草 2红花 3+7树 4/5/6/8/9/10/12/13/14土地 11蓝花 15路牌
 int map_stage1[20][28] = {
-	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,},
-	{ 7, 7, 7, 7, 7, 7, 7, 7, 7, 0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,},
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,},
+	{ 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,},
 	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
 	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
 	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 17, 18, 19, 20, 0, 0, 0, 0, 0, 3,},
@@ -232,16 +232,16 @@ int map_stage1[20][28] = {
 	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 32, 33, 34, 35, 0, 0, 0, 0, 0, 7,},
 	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 37, 38, 39, 40, 0, 0, 0, 0, 0, 3,},
 	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 13, 13, 13, 14, 0, 0, 0, 0, 0, 7,},
-	{ 3, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
-	{ 7, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
-	{ 3, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
-	{ 7, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
-	{ 3, 0, 0, 0, 2, 2, 2, 2,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
-	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
-	{ 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
-	{ 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
-	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,},
-	{ 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,},
+	{ 56,46,46,46,46,46,46,46,46,46,46,46,46,46,60,0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,},
+	{ 57,52,42,42,42,42,42,42,42,42,42,42,42,42,44,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,},
+	{ 57,53,41,41,41,41,41,41,41,41,41,41,41,41,45,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+	{ 57,53,41,41,41,41,41,41,41,41,41,41,41,41,55,42,44,52,47,48,48,42,42,42,42,42,42,42,},
+	{ 57,53,41,41,41,41,41,41,41,41,41,41,41,41,41,41,45,53,49,50,50,50,50,50,50,50,50,50,},
+	{ 57,53,41,41,41,41,41,41,41,41,41,41,41,41,41,41,45,53,51,49,50,50,50,50,50,50,50,50,},
+	{ 57,53,41,41,41,41,41,41,41,41,41,41,41,41,41,41,45,53,0, 51,49,50,50,50,50,50,50,50,},
+	{ 57,53,41,41,41,41,41,41,41,41,41,41,41,41,41,41,45,53,0, 0, 51,49,50,50,50,50,50,50,},
+	{ 57,53,41,41,41,41,41,41,41,41,41,41,41,41,41,41,45,53,56,59,59,59,58,58,58,58,58,58,},
+	{ 57,53,41,41,41,41,41,41,41,41,41,41,41,41,41,41,45,53,45,46,46,46,46,46,46,46,46,46,},
 };
 //第二个关卡地图
 int map_stage2[20][28] = {
@@ -1608,12 +1608,12 @@ void UpdatePokemons(HWND hWnd) {
 					pokemons[i]->x = 832;
 					pokemons[i]->vx = -pokemons[i]->vx;
 				}
-				if (pokemons[i]->y < 416) {
-					pokemons[i]->y = 416;
+				if (pokemons[i]->y < 480) {
+					pokemons[i]->y = 480;
 					pokemons[i]->vy = -pokemons[i]->vy; // 反转垂直速度
 				}
-				if (pokemons[i]->y > 576) {
-					pokemons[i]->y = 576;
+				if (pokemons[i]->y > 556) {
+					pokemons[i]->y = 556;
 					pokemons[i]->vy = -pokemons[i]->vy;
 				}
 
@@ -1891,7 +1891,7 @@ bool CheckCollision1(int x, int y, int direction, int map[20][28], int stageid) 
 	if (stageid == STAGE_1)
 	{
 		// 检查是否碰到不可通过的障碍物（3, 7, 15）
-		if (map[targetY][targetX] == 3 || map[targetY][targetX] == 7 || map[targetY][targetX] == 15 || map[targetY][targetX] == 12 || map[targetY][targetX] == 16 || map[targetY][targetX] == 17 || map[targetY][targetX] == 18 || map[targetY][targetX] == 19 || map[targetY][targetX] == 20 || map[targetY][targetX] == 21 || map[targetY][targetX] == 25 || map[targetY][targetX] == 26 || map[targetY][targetX] == 30 || map[targetY][targetX] == 31 || map[targetY][targetX] == 35 || map[targetY][targetX] == 36 || map[targetY][targetX] == 33 || map[targetY][targetX] == 39 || map[targetY][targetX] == 40) {
+		if (map[targetY][targetX] == 3 || map[targetY][targetX] == 7 || map[targetY][targetX] == 15 || map[targetY][targetX] == 12 || map[targetY][targetX] == 16 || map[targetY][targetX] == 17 || map[targetY][targetX] == 18 || map[targetY][targetX] == 19 || map[targetY][targetX] == 20 || map[targetY][targetX] == 21 || map[targetY][targetX] == 25 || map[targetY][targetX] == 26 || map[targetY][targetX] == 30 || map[targetY][targetX] == 31 || map[targetY][targetX] == 35 || map[targetY][targetX] == 36 || map[targetY][targetX] == 33 || map[targetY][targetX] == 39 || map[targetY][targetX] == 40 || map[targetY][targetX] == 56 || map[targetY][targetX] == 52 || map[targetY][targetX] == 46 || map[targetY][targetX] == 60 || map[targetY][targetX] == 44 || map[targetY][targetX] == 45 || map[targetY][targetX] == 42 || map[targetY][targetX] == 53 || map[targetY][targetX] == 56 || map[targetY][targetX] == 58 || map[targetY][targetX] == 59) {
 			return true; // 碰撞，无法移动
 		}
 	}
@@ -2422,7 +2422,7 @@ NPC* CreateNPC(int x, int y, int npc_id)
 		npc->img = bmp_NPC_MAN1;
 		npc->conversations1_before.push_back(L"村长：Ciallo！勇者！欢迎来到宝可梦：背包乱斗！");
 		npc->conversations1_before.push_back(L"村长：在这个世界中，宝可梦没有等级，只能通过道具不断变强！");
-		npc->conversations1_before.push_back(L"村长：最近下面的房子都被那只喷火龙糟蹋的不成样子了,TA以前明明是我们的守护神……");
+		npc->conversations1_before.push_back(L"村长：最近喷火龙一直作乱，我们只好把他放逐到下面的沙滩上,TA以前明明是我们的守护神……");
 		npc->conversations1_before.push_back(L"你：啊？可是我还没有宝可梦？这怎么打？！");
 		npc->conversations1_before.push_back(L"村长：没关系！送给你这些基础道具，请全部拿走他们，每个道具会占据的空间，打开背包，将他们合理安放");
 		npc->conversations1_before.push_back(L"合理运用道具！击败或收服这只宝可梦吧！");
